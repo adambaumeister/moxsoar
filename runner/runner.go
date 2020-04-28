@@ -2,6 +2,7 @@ package runner
 
 import (
 	"fmt"
+	"github.com/adambaumeister/moxsoar/integrations/minemeld"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -15,6 +16,7 @@ RunConfig is the configuration passed to the runner object
 */
 type RunConfig struct {
 	Runner Runner
+	Run    []Run
 }
 
 /*
@@ -27,6 +29,13 @@ type Runner struct {
 	ContentDir string
 
 	currentPort int
+}
+
+/*
+Run definitions
+*/
+type Run struct {
+	Integration string
 }
 
 func (r *Runner) GetAddress() string {
@@ -54,4 +63,14 @@ func GetRunConfig(contentDir string) RunConfig {
 	rc.Runner.currentPort = rc.Runner.PortMin
 
 	return rc
+}
+
+func (rc *RunConfig) RunAll() {
+	for _, run := range rc.Run {
+		switch run.Integration {
+		case "minemeld":
+			m := minemeld.Minemeld{}
+			m.Start(rc.Runner.ContentDir, rc.Runner.GetAddress())
+		}
+	}
 }
