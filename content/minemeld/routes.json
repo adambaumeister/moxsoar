@@ -1,0 +1,7 @@
+{
+  "/status/minemeld": {
+    "path": "/status/minemeld",
+    "responseCode": 200,
+    "responseFile": "status.json"
+  }
+}
