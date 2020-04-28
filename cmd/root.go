@@ -49,10 +49,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/moxsoar.yml)")
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "address", "0.0.0.0", "Local address to bind to (defaults to 0.0.0.0)")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "More verbose output.")
 
-	viper.Set("address", address)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -76,9 +74,7 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	} else {
+	if err := viper.ReadInConfig(); err != nil {
 		log.Fatal(err)
 	}
 }
