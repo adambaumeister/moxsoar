@@ -1,0 +1,14 @@
+{
+  "result": [
+    {
+      "indicator": "254.254.254.254",
+      "comment": "This is a test indicator and has been mock'd for you.",
+      "type": "ipv4"
+    },
+    {
+      "indicator": "254.254.254.254",
+      "comment": "This is a test indicator and has been mock'd for you.",
+      "type": "ipv4"
+    }
+  ]
+}

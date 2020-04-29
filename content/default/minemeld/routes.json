@@ -7,6 +7,6 @@
   "/config/data/": {
     "path": "/config/data/",
     "responseCode": 200,
-    "responseFile": "config_data.json"
+    "responseFile": "v4_indicator.json"
   }
 }

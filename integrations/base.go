@@ -2,6 +2,8 @@ package integrations
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/adambaumeister/moxsoar/api"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -46,13 +48,12 @@ func (bi *BaseIntegration) Start(integrationName string, contentDir string, addr
 
 	httpMux := http.NewServeMux()
 	for _, route := range bi.Routes {
-		// This doesn't work - The routes overwrite the other ones
 		httpMux.HandleFunc(route.Path, func(writer http.ResponseWriter, request *http.Request) {
 			// HandleFunc gets defined when the server starts, dispatch runs when a request is received
 			r := bi.Dispatch(request, contentDir)
 			fb, err := ioutil.ReadFile(path.Join(contentDir, integrationName, r.ResponseFile))
 			if err != nil {
-				log.Fatal(err)
+				sendError(writer, api.ErrorMessage(fmt.Sprintf("Failed to read: %v", r.ResponseFile)))
 			}
 			_, err = writer.Write(fb)
 		})
@@ -69,6 +70,11 @@ func (bi *BaseIntegration) Dispatch(request *http.Request, contentdir string) Ro
 	// Used at runtime
 	r := bi.GetRoute(request.URL.Path)
 	return r
+}
+
+func sendError(writer http.ResponseWriter, b []byte) {
+	writer.WriteHeader(500)
+	_, _ = writer.Write(b)
 }
 
 type Route struct {
