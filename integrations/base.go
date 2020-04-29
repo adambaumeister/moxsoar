@@ -1,6 +1,13 @@
 package integrations
 
-import "regexp"
+import (
+	"encoding/json"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"path"
+	"regexp"
+)
 
 type BaseIntegration struct {
 	Routes map[string]Route
@@ -24,6 +31,44 @@ func (bi *BaseIntegration) GetRoute(url string) Route {
 		ResponseFile: "default.json",
 		ResponseCode: 200,
 	}
+}
+
+func (bi *BaseIntegration) Start(integrationName string, contentDir string, addr string) {
+	b, err := ioutil.ReadFile(path.Join(contentDir, integrationName, "routes.json"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = json.Unmarshal(b, &bi.Routes)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	httpMux := http.NewServeMux()
+	for _, route := range bi.Routes {
+		// This doesn't work - The routes overwrite the other ones
+		httpMux.HandleFunc(route.Path, func(writer http.ResponseWriter, request *http.Request) {
+			// HandleFunc gets defined when the server starts, dispatch runs when a request is received
+			r := bi.Dispatch(request, contentDir)
+			fb, err := ioutil.ReadFile(path.Join(contentDir, integrationName, r.ResponseFile))
+			if err != nil {
+				log.Fatal(err)
+			}
+			_, err = writer.Write(fb)
+		})
+
+	}
+
+	err = http.ListenAndServe(addr, httpMux)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (bi *BaseIntegration) Dispatch(request *http.Request, contentdir string) Route {
+	// Used at runtime
+	r := bi.GetRoute(request.URL.Path)
+	return r
 }
 
 type Route struct {

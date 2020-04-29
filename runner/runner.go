@@ -2,7 +2,7 @@ package runner
 
 import (
 	"fmt"
-	"github.com/adambaumeister/moxsoar/integrations/minemeld"
+	"github.com/adambaumeister/moxsoar/integrations"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -69,8 +69,8 @@ func (rc *RunConfig) RunAll() {
 	for _, run := range rc.Run {
 		switch run.Integration {
 		case "minemeld":
-			m := minemeld.Minemeld{}
-			m.Start(rc.Runner.ContentDir, rc.Runner.GetAddress())
+			i := integrations.BaseIntegration{}
+			i.Start("minemeld", rc.Runner.ContentDir, rc.Runner.GetAddress())
 		}
 	}
 }
