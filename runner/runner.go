@@ -10,6 +10,7 @@ import (
 )
 
 const DEFAULT_RUNNER_CONFIG = "runner.yml"
+const DEFAULT_PACK = "default"
 
 /*
 RunConfig is the configuration passed to the runner object
@@ -27,6 +28,7 @@ type Runner struct {
 	PortMin    int
 	PortMax    int
 	ContentDir string
+	PackDir    string
 
 	currentPort int
 }
@@ -48,12 +50,15 @@ func (r *Runner) GetAddress() string {
 
 func GetRunConfig(contentDir string) RunConfig {
 	// Get the runner configuration
-	b, err := ioutil.ReadFile(path.Join(contentDir, DEFAULT_RUNNER_CONFIG))
+	packDir := path.Join(contentDir, DEFAULT_PACK)
+
+	b, err := ioutil.ReadFile(path.Join(packDir, DEFAULT_RUNNER_CONFIG))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	rc := RunConfig{}
+	rc.Runner.PackDir = packDir
 	err = yaml.Unmarshal(b, &rc)
 
 	if err != nil {
@@ -66,11 +71,14 @@ func GetRunConfig(contentDir string) RunConfig {
 }
 
 func (rc *RunConfig) RunAll() {
+	/*
+		Start all the configured mock integrations
+	*/
 	for _, run := range rc.Run {
 		switch run.Integration {
 		case "minemeld":
 			i := integrations.BaseIntegration{}
-			i.Start("minemeld", rc.Runner.ContentDir, rc.Runner.GetAddress())
+			i.Start("minemeld", rc.Runner.PackDir, rc.Runner.GetAddress())
 		}
 	}
 }
