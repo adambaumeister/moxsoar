@@ -10,7 +10,6 @@ import (
 )
 
 const DEFAULT_RUNNER_CONFIG = "runner.yml"
-const DEFAULT_PACK = "default"
 
 /*
 RunConfig is the configuration passed to the runner object
@@ -48,9 +47,8 @@ func (r *Runner) GetAddress() string {
 	return a
 }
 
-func GetRunConfig(contentDir string) RunConfig {
+func GetRunConfig(packDir string) RunConfig {
 	// Get the runner configuration
-	packDir := path.Join(contentDir, DEFAULT_PACK)
 
 	b, err := ioutil.ReadFile(path.Join(packDir, DEFAULT_RUNNER_CONFIG))
 	if err != nil {
@@ -64,7 +62,6 @@ func GetRunConfig(contentDir string) RunConfig {
 	if err != nil {
 		log.Fatal(err)
 	}
-	rc.Runner.ContentDir = contentDir
 	rc.Runner.currentPort = rc.Runner.PortMin
 
 	return rc

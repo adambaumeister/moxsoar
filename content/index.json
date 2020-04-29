@@ -1,0 +1,10 @@
+{
+  "packs": [
+    {
+      "name": "default",
+      "comment": "The base content pack.",
+      "version": "0.1",
+      "path": "default"
+    }
+  ]
+}

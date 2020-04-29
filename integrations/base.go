@@ -35,8 +35,8 @@ func (bi *BaseIntegration) GetRoute(url string) Route {
 	}
 }
 
-func (bi *BaseIntegration) Start(integrationName string, contentDir string, addr string) {
-	b, err := ioutil.ReadFile(path.Join(contentDir, integrationName, "routes.json"))
+func (bi *BaseIntegration) Start(integrationName string, packDir string, addr string) {
+	b, err := ioutil.ReadFile(path.Join(packDir, integrationName, "routes.json"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,8 +50,8 @@ func (bi *BaseIntegration) Start(integrationName string, contentDir string, addr
 	for _, route := range bi.Routes {
 		httpMux.HandleFunc(route.Path, func(writer http.ResponseWriter, request *http.Request) {
 			// HandleFunc gets defined when the server starts, dispatch runs when a request is received
-			r := bi.Dispatch(request, contentDir)
-			fb, err := ioutil.ReadFile(path.Join(contentDir, integrationName, r.ResponseFile))
+			r := bi.Dispatch(request, packDir)
+			fb, err := ioutil.ReadFile(path.Join(packDir, integrationName, r.ResponseFile))
 			if err != nil {
 				sendError(writer, api.ErrorMessage(fmt.Sprintf("Failed to read: %v", r.ResponseFile)))
 			}
@@ -66,7 +66,7 @@ func (bi *BaseIntegration) Start(integrationName string, contentDir string, addr
 	}
 }
 
-func (bi *BaseIntegration) Dispatch(request *http.Request, contentdir string) Route {
+func (bi *BaseIntegration) Dispatch(request *http.Request, packDir string) Route {
 	// Used at runtime
 	r := bi.GetRoute(request.URL.Path)
 	return r
