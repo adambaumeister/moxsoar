@@ -2,19 +2,23 @@
   "result": [
     {
       "name": "example_v4miner",
-      "class": "minemeld.ft.local.YamlIPv4FT"
+      "class": "minemeld.ft.local.YamlIPv4FT",
+      "length": 2
     },
     {
       "name": "example_v6miner",
-      "class": "minemeld.ft.local.YamlIPv6FT"
+      "class": "minemeld.ft.local.YamlIPv6FT",
+      "length": 2
     },
     {
       "name": "example_urlminer",
-      "class": "minemeld.ft.local.YamlURLFT"
+      "class": "minemeld.ft.local.YamlURLFT",
+      "length": 2
     },
     {
       "name": "example_domainminer",
-      "class": "minemeld.ft.local.YamlDomainFT"
+      "class": "minemeld.ft.local.YamlDomainFT",
+      "length": 2
     }
   ]
 }
