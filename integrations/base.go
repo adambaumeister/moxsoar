@@ -21,23 +21,42 @@ type BaseIntegration struct {
 	Tracker tracker.DebugTracker
 }
 
-func (bi *BaseIntegration) GetRoute(url string) Route {
-	if route, ok := bi.Routes[url]; ok {
-		return route
-	}
+func (bi *BaseIntegration) GetRoute(url string, method string) Method {
 
+	// Get a route for a given request
 	for _, route := range bi.Routes {
+		// Url routing using regex. What will these crazy kooks think of next aye?
 		m, _ := regexp.MatchString(route.Path, url)
+
 		if m {
-			return route
+
+			// If the route doesn't specify methods, and the path matches, return it
+			if route.Methods == nil {
+
+				return Method{
+					ResponseFile: route.ResponseFile,
+					ResponseCode: route.ResponseCode,
+					HttpMethod:   method,
+				}
+			}
+
+			// If the route does specify methods, try to match the method against the provided
+			for _, rmethod := range route.Methods {
+				fmt.Printf("%v, %v try match %v\n", url, method, rmethod.HttpMethod)
+
+				if method == rmethod.HttpMethod {
+					return rmethod
+				}
+			}
+
 		}
 	}
 
-	// This is pretty hacky for now, need to improve this
-	return Route{
-		Path:         "/",
+	// If nothing matches, return this.
+	return Method{
 		ResponseFile: "default.json",
 		ResponseCode: 200,
+		HttpMethod:   method,
 	}
 }
 
@@ -88,12 +107,13 @@ func (bi *BaseIntegration) ReadRoutes(routeFile string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 }
 
-func (bi *BaseIntegration) Dispatch(request *http.Request, packDir string) Route {
+func (bi *BaseIntegration) Dispatch(request *http.Request, packDir string) Method {
 	// Used at runtime
-	r := bi.GetRoute(request.URL.Path)
-	return r
+	m := bi.GetRoute(request.URL.Path, request.Method)
+	return m
 }
 
 func sendError(writer http.ResponseWriter, b []byte) {
@@ -103,6 +123,13 @@ func sendError(writer http.ResponseWriter, b []byte) {
 
 type Route struct {
 	Path         string
+	ResponseFile string
+	ResponseCode int
+	Methods      []Method
+}
+
+type Method struct {
+	HttpMethod   string
 	ResponseFile string
 	ResponseCode int
 }

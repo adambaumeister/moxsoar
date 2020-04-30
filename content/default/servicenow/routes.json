@@ -1,7 +1,17 @@
 {
   "/api/now/table/incident": {
     "path": "/api/now/table/incident",
-    "responseCode": 200,
-    "responseFile": "table.json"
+    "methods": [
+      {
+        "httpmethod": "GET",
+        "responseFile": "table.json",
+        "responseCode": 200
+      },
+      {
+        "httpmethod": "POST",
+        "responseFile": "table_update.json",
+        "responseCode": 200
+      }
+    ]
   }
 }
