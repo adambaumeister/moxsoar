@@ -1,9 +1,11 @@
 package integrations
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/adambaumeister/moxsoar/api"
+	"github.com/adambaumeister/moxsoar/tracker"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,6 +15,10 @@ import (
 
 type BaseIntegration struct {
 	Routes map[string]Route
+
+	Ctx context.Context
+
+	Tracker tracker.DebugTracker
 }
 
 func (bi *BaseIntegration) GetRoute(url string) Route {
@@ -35,20 +41,25 @@ func (bi *BaseIntegration) GetRoute(url string) Route {
 	}
 }
 
-func (bi *BaseIntegration) Start(integrationName string, packDir string, addr string) {
-	b, err := ioutil.ReadFile(path.Join(packDir, integrationName, "routes.json"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = json.Unmarshal(b, &bi.Routes)
+func defaultHandler(_ http.ResponseWriter, request *http.Request) {
+	t := tracker.GetDebugTracker()
+	t.Track(request)
+}
 
-	if err != nil {
-		log.Fatal(err)
-	}
+func (bi *BaseIntegration) Start(integrationName string, packDir string, addr string) {
+	/*
+		Register the HTTP handlers and start the integration
+	*/
+	bi.ReadRoutes(path.Join(packDir, integrationName, "routes.json"))
 
 	httpMux := http.NewServeMux()
+	httpMux.HandleFunc("/", defaultHandler)
 	for _, route := range bi.Routes {
 		httpMux.HandleFunc(route.Path, func(writer http.ResponseWriter, request *http.Request) {
+
+			// Read the route table within the http handler, such that it is dynamic
+			bi.ReadRoutes(path.Join(packDir, integrationName, "routes.json"))
+
 			// HandleFunc gets defined when the server starts, dispatch runs when a request is received
 			r := bi.Dispatch(request, packDir)
 			fb, err := ioutil.ReadFile(path.Join(packDir, integrationName, r.ResponseFile))
@@ -60,7 +71,20 @@ func (bi *BaseIntegration) Start(integrationName string, packDir string, addr st
 
 	}
 
-	err = http.ListenAndServe(addr, httpMux)
+	err := http.ListenAndServe(addr, httpMux)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (bi *BaseIntegration) ReadRoutes(routeFile string) {
+	// Read the route table on invocation, such that it is dynamic
+	b, err := ioutil.ReadFile(routeFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = json.Unmarshal(b, &bi.Routes)
+
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"fmt"
 	"github.com/adambaumeister/moxsoar/integrations"
 	"gopkg.in/yaml.v2"
@@ -71,11 +72,28 @@ func (rc *RunConfig) RunAll() {
 	/*
 		Start all the configured mock integrations
 	*/
+
+	ctx := context.Background()
+
 	for _, run := range rc.Run {
 		switch run.Integration {
 		case "minemeld":
-			i := integrations.BaseIntegration{}
-			i.Start("minemeld", rc.Runner.PackDir, rc.Runner.GetAddress())
+			fmt.Printf("Starting minemeld integration.\n")
+			i := integrations.BaseIntegration{
+				Ctx: ctx,
+			}
+			go i.Start("minemeld", rc.Runner.PackDir, rc.Runner.GetAddress())
+		case "servicenow":
+			fmt.Printf("Starting SNOW integration.\n")
+			i := integrations.BaseIntegration{
+				Ctx: ctx,
+			}
+			go i.Start("servicenow", rc.Runner.PackDir, rc.Runner.GetAddress())
 		}
+	}
+
+	select {
+	case <-ctx.Done():
+		log.Fatal("One or more integrations failed to start. Whoopsie!")
 	}
 }

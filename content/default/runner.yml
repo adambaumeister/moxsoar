@@ -4,3 +4,4 @@ runner:
   portmax: 8099
 run:
   - integration: minemeld
+  - integration: servicenow
