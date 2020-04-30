@@ -1,17 +1,21 @@
 {
-  "/api/now/table/incident": {
-    "path": "/api/now/table/incident",
-    "methods": [
-      {
-        "httpmethod": "GET",
-        "responseFile": "table.json",
-        "responseCode": 200
-      },
-      {
-        "httpmethod": "POST",
-        "responseFile": "table_update.json",
-        "responseCode": 200
-      }
-    ]
-  }
+  "routes": [
+    {
+      "path": "/api/now/table/incident",
+      "methods": [
+        {
+          "matchregex": "/api/now/table/incident",
+          "httpmethod": "GET",
+          "responseFile": "table.json",
+          "responseCode": 200
+        },
+        {
+          "matchregex": "/api/now/table/incident",
+          "httpmethod": "POST",
+          "responseFile": "table_update.json",
+          "responseCode": 200
+        }
+      ]
+    }
+  ]
 }

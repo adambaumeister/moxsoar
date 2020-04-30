@@ -11,10 +11,11 @@ import (
 	"net/http"
 	"path"
 	"regexp"
+	"strings"
 )
 
 type BaseIntegration struct {
-	Routes map[string]Route
+	Routes []Route
 
 	Ctx context.Context
 
@@ -25,11 +26,8 @@ func (bi *BaseIntegration) GetRoute(url string, method string) Method {
 
 	// Get a route for a given request
 	for _, route := range bi.Routes {
-		// Url routing using regex. What will these crazy kooks think of next aye?
-		m, _ := regexp.MatchString(route.Path, url)
 
-		if m {
-
+		if strings.Contains(url, route.Path) {
 			// If the route doesn't specify methods, and the path matches, return it
 			if route.Methods == nil {
 
@@ -42,13 +40,17 @@ func (bi *BaseIntegration) GetRoute(url string, method string) Method {
 
 			// If the route does specify methods, try to match the method against the provided
 			for _, rmethod := range route.Methods {
-				fmt.Printf("%v, %v try match %v\n", url, method, rmethod.HttpMethod)
-
 				if method == rmethod.HttpMethod {
+					//  MatchRegex allows more granular (regex) matching for making routing decisions
+					if rmethod.MatchRegex != "" {
+						m, _ := regexp.MatchString(rmethod.MatchRegex, url)
+						if m {
+							return rmethod
+						}
+					}
 					return rmethod
 				}
 			}
-
 		}
 	}
 
@@ -102,7 +104,7 @@ func (bi *BaseIntegration) ReadRoutes(routeFile string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = json.Unmarshal(b, &bi.Routes)
+	err = json.Unmarshal(b, &bi)
 
 	if err != nil {
 		log.Fatal(err)
@@ -132,4 +134,5 @@ type Method struct {
 	HttpMethod   string
 	ResponseFile string
 	ResponseCode int
+	MatchRegex   string
 }

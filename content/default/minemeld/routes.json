@@ -1,12 +1,14 @@
 {
-  "/status/minemeld": {
-    "path": "/status/minemeld",
-    "responseCode": 200,
-    "responseFile": "status.json"
-  },
-  "/config/data/": {
-    "path": "/config/data/",
-    "responseCode": 200,
-    "responseFile": "v4_indicator.json"
-  }
+  "routes": [
+    {
+      "path": "/status/minemeld",
+      "responseCode": 200,
+      "responseFile": "status.json"
+    },
+    {
+      "path": "/config/data/",
+      "responseCode": 200,
+      "responseFile": "v4_indicator.json"
+    }
+  ]
 }
