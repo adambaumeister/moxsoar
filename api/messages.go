@@ -2,11 +2,22 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/dgrijalva/jwt-go"
 	"log"
 )
 
 type Error struct {
 	Message string
+}
+
+type Credentials struct {
+	Password string
+	Username string
+}
+
+type Claims struct {
+	Username string
+	jwt.StandardClaims
 }
 
 func ErrorMessage(m string) []byte {

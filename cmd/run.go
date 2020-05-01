@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/adambaumeister/moxsoar/api"
 	"github.com/adambaumeister/moxsoar/pack"
 	"github.com/adambaumeister/moxsoar/runner"
 	"github.com/spf13/cobra"
@@ -16,6 +17,9 @@ var runCmd = &cobra.Command{
 	Short: "Start the server.",
 	Long:  "Starts all configured Mock engines and content.",
 	Run: func(cmd *cobra.Command, args []string) {
+		// start the API server first
+		api.Start(":8080")
+
 		pi := pack.GetPackIndex(viper.GetString("contentdir"))
 		// Pull the default content repository
 		p, err := pi.GetOrClone(DEFAULT_PACK, DEFAULT_REPO)
