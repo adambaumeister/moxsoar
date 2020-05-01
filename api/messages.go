@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/adambaumeister/moxsoar/pack"
 	"github.com/dgrijalva/jwt-go"
 	"log"
 )
@@ -10,6 +11,9 @@ type Error struct {
 	Message string
 }
 
+/*
+Auth messages
+*/
 type Credentials struct {
 	Password string
 	Username string
@@ -18,6 +22,13 @@ type Credentials struct {
 type Claims struct {
 	Username string
 	jwt.StandardClaims
+}
+
+/*
+Pack messages
+*/
+type GetPacksResponse struct {
+	Packs []*pack.Pack
 }
 
 func ErrorMessage(m string) []byte {

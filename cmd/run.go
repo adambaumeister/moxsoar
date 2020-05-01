@@ -18,9 +18,10 @@ var runCmd = &cobra.Command{
 	Long:  "Starts all configured Mock engines and content.",
 	Run: func(cmd *cobra.Command, args []string) {
 		// start the API server first
-		api.Start(":8080")
 
 		pi := pack.GetPackIndex(viper.GetString("contentdir"))
+
+		api.Start(":8080", pi)
 		// Pull the default content repository
 		p, err := pi.GetOrClone(DEFAULT_PACK, DEFAULT_REPO)
 
