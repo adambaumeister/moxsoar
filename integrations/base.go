@@ -74,6 +74,7 @@ func (bi *BaseIntegration) Start(integrationName string, packDir string, addr st
 	bi.ReadRoutes(path.Join(packDir, integrationName, "routes.json"))
 
 	httpMux := http.NewServeMux()
+	s := http.Server{Addr: addr, Handler: httpMux}
 	httpMux.HandleFunc("/", defaultHandler)
 	for _, route := range bi.Routes {
 		httpMux.HandleFunc(route.Path, func(writer http.ResponseWriter, request *http.Request) {
@@ -95,7 +96,7 @@ func (bi *BaseIntegration) Start(integrationName string, packDir string, addr st
 
 	}
 
-	err := http.ListenAndServe(addr, httpMux)
+	err := s.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}
