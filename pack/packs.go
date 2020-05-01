@@ -1,9 +1,11 @@
-package runner
+package pack
 
 import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
 	"path"
 )
 
@@ -19,6 +21,8 @@ The pack index (index.json) maintains the index.
 
 type PackIndex struct {
 	Packs []*Pack
+
+	ContentDir string
 }
 
 type Pack struct {
@@ -39,14 +43,29 @@ func (p *PackIndex) GetPackName(pn string) (*Pack, error) {
 	return nil, fmt.Errorf("Invalid pack name %v supplied", pn)
 }
 
+func (p *PackIndex) Get(packName string, repopath string) {
+	//gp, err := GetPackFromGit(p.ContentDir, repopath)
+	_, err := GetPackFromGit(path.Join(p.ContentDir, packName), repopath)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func GetPackIndex(contentDir string) PackIndex {
 	// Lookup the pack index
-	b, err := ioutil.ReadFile(path.Join(contentDir, PACK_INDEX_FILE))
-	if err != nil {
-		panic(err)
+	packs := []*Pack{}
+	pi := PackIndex{
+		ContentDir: contentDir,
+		Packs:      packs,
 	}
 
-	pi := PackIndex{}
+	b, err := ioutil.ReadFile(path.Join(contentDir, PACK_INDEX_FILE))
+	// If it doesn't exist, create an empty index and return immediately.
+	if err != nil {
+		pi.WritePackIndex(path.Join(contentDir, PACK_INDEX_FILE))
+		return pi
+	}
+
 	err = json.Unmarshal(b, &pi)
 	if err != nil {
 		panic(err)
@@ -59,4 +78,17 @@ func GetPackIndex(contentDir string) PackIndex {
 
 	return pi
 
+}
+
+func (pi *PackIndex) WritePackIndex(p string) {
+
+	b, err := json.Marshal(pi)
+	if err != nil {
+		panic(err)
+	}
+
+	err = ioutil.WriteFile(p, b, os.FileMode(644))
+	if err != nil {
+		panic(err)
+	}
 }

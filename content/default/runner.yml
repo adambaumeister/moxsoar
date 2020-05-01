@@ -1,7 +1,0 @@
-runner:
-  address: 0.0.0.0
-  portmin: 8000
-  portmax: 8099
-run:
-  - integration: minemeld
-  - integration: servicenow
