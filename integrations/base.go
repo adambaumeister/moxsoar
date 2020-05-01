@@ -26,8 +26,8 @@ func (bi *BaseIntegration) GetRoute(url string, method string) Method {
 
 	// Get a route for a given request
 	for _, route := range bi.Routes {
-
 		if strings.Contains(url, route.Path) {
+
 			// If the route doesn't specify methods, and the path matches, return it
 			if route.Methods == nil {
 
@@ -77,6 +77,9 @@ func (bi *BaseIntegration) Start(integrationName string, packDir string, addr st
 	httpMux.HandleFunc("/", defaultHandler)
 	for _, route := range bi.Routes {
 		httpMux.HandleFunc(route.Path, func(writer http.ResponseWriter, request *http.Request) {
+
+			t := tracker.GetDebugTracker()
+			t.Track(request)
 
 			// Read the route table within the http handler, such that it is dynamic
 			bi.ReadRoutes(path.Join(packDir, integrationName, "routes.json"))
