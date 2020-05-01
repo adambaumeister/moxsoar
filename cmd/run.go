@@ -9,6 +9,7 @@ import (
 )
 
 const DEFAULT_PACK = "moxsoar-content"
+const DEFAULT_REPO = "https://github.com/adambaumeister/moxsoar-content.git"
 
 var runCmd = &cobra.Command{
 	Use:   "run",
@@ -16,14 +17,13 @@ var runCmd = &cobra.Command{
 	Long:  "Starts all configured Mock engines and content.",
 	Run: func(cmd *cobra.Command, args []string) {
 		pi := pack.GetPackIndex(viper.GetString("contentdir"))
-		pi.Get(DEFAULT_PACK, "https://github.com/adambaumeister/moxsoar-content.git")
+		// Pull the default content repository
+		p, err := pi.GetOrClone(DEFAULT_PACK, DEFAULT_REPO)
 
-		// Use the default pack out of the box.
-		p, err := pi.GetPackName(DEFAULT_PACK)
 		if err != nil {
 			log.Fatal("Could not load default pack name %v during startup!", DEFAULT_PACK)
 		}
-		rc := runner.GetRunConfig(p.FullPath)
+		rc := runner.GetRunConfig(p.Path)
 		rc.RunAll()
 	},
 }

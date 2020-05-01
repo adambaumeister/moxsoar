@@ -20,9 +20,9 @@ The pack index (index.json) maintains the index.
 */
 
 type PackIndex struct {
-	Packs []*Pack
-
+	Packs      []*Pack
 	ContentDir string
+	indexfile  string
 }
 
 type Pack struct {
@@ -30,11 +30,10 @@ type Pack struct {
 	Comment string
 	Version string
 	Path    string
-
-	FullPath string
 }
 
 func (p *PackIndex) GetPackName(pn string) (*Pack, error) {
+	p.Reindex()
 	for _, pack := range p.Packs {
 		if pack.Name == pn {
 			return pack, nil
@@ -43,27 +42,61 @@ func (p *PackIndex) GetPackName(pn string) (*Pack, error) {
 	return nil, fmt.Errorf("Invalid pack name %v supplied", pn)
 }
 
+func (pi *PackIndex) GetOrClone(packName string, repopath string) (*Pack, error) {
+	p, _ := pi.GetPackName(packName)
+	if p == nil {
+		pi.Get(packName, repopath)
+	}
+	p, err := pi.GetPackName(packName)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to retrieve pack.")
+	}
+
+	return p, nil
+}
+
+func (pi *PackIndex) Reindex() {
+	rePacks := []*Pack{}
+	for _, pack := range pi.Packs {
+		// This re-indexes by removing packs that are no longer on the system from the index
+		if _, err := os.Stat(pack.Path); !os.IsNotExist(err) {
+			rePacks = append(rePacks, pack)
+		}
+	}
+
+	pi.Packs = rePacks
+
+}
+
 func (p *PackIndex) Get(packName string, repopath string) {
-	//gp, err := GetPackFromGit(p.ContentDir, repopath)
+	// Retrieve a pack from the given git url
 	_, err := GetPackFromGit(path.Join(p.ContentDir, packName), repopath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	newPack := Pack{
+		Name: packName,
+		Path: path.Join(p.ContentDir, packName),
+	}
+
+	p.Packs = append(p.Packs, &newPack)
+	p.WritePackIndex(p.indexfile)
 }
 
-func GetPackIndex(contentDir string) PackIndex {
+func GetPackIndex(contentDir string) *PackIndex {
 	// Lookup the pack index
 	packs := []*Pack{}
 	pi := PackIndex{
 		ContentDir: contentDir,
 		Packs:      packs,
+		indexfile:  path.Join(contentDir, PACK_INDEX_FILE),
 	}
 
-	b, err := ioutil.ReadFile(path.Join(contentDir, PACK_INDEX_FILE))
+	b, err := ioutil.ReadFile(pi.indexfile)
 	// If it doesn't exist, create an empty index and return immediately.
 	if err != nil {
-		pi.WritePackIndex(path.Join(contentDir, PACK_INDEX_FILE))
-		return pi
+		pi.WritePackIndex(pi.indexfile)
+		return &pi
 	}
 
 	err = json.Unmarshal(b, &pi)
@@ -71,12 +104,7 @@ func GetPackIndex(contentDir string) PackIndex {
 		panic(err)
 	}
 
-	for _, pack := range pi.Packs {
-		pack.FullPath = path.Join(contentDir, pack.Path)
-
-	}
-
-	return pi
+	return &pi
 
 }
 
