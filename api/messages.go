@@ -24,6 +24,10 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
+type AddUserMessage struct {
+	Message string
+}
+
 /*
 Pack messages
 */

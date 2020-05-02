@@ -12,14 +12,15 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type BaseIntegration struct {
 	Routes []Route
 
-	Ctx context.Context
-
-	Tracker tracker.DebugTracker
+	Ctx      context.Context
+	ExitChan chan bool
+	Tracker  tracker.DebugTracker
 }
 
 func (bi *BaseIntegration) GetRoute(url string, method string) Method {
@@ -75,6 +76,22 @@ func (bi *BaseIntegration) Start(integrationName string, packDir string, addr st
 
 	httpMux := http.NewServeMux()
 	s := http.Server{Addr: addr, Handler: httpMux}
+
+	// This starts a func in the background that just sits listening for input on that channel, then executes
+	// very cool
+	go func() {
+		<-bi.ExitChan
+		fmt.Printf("requested shutdown\n")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		if err := s.Shutdown(ctx); err != nil {
+			log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
+		}
+		bi.ExitChan <- true
+	}()
+
 	httpMux.HandleFunc("/", defaultHandler)
 	for _, route := range bi.Routes {
 		httpMux.HandleFunc(route.Path, func(writer http.ResponseWriter, request *http.Request) {

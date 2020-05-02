@@ -74,26 +74,30 @@ func (rc *RunConfig) RunAll() {
 	*/
 
 	ctx := context.Background()
-
+	exitChan := make(chan bool)
 	for _, run := range rc.Run {
 		switch run.Integration {
 		case "minemeld":
 			fmt.Printf("Starting minemeld integration.\n")
 			i := integrations.BaseIntegration{
-				Ctx: ctx,
+				Ctx:      ctx,
+				ExitChan: exitChan,
 			}
 			go i.Start("minemeld", rc.Runner.PackDir, rc.Runner.GetAddress())
 		case "servicenow":
 			fmt.Printf("Starting SNOW integration.\n")
 			i := integrations.BaseIntegration{
-				Ctx: ctx,
+				Ctx:      ctx,
+				ExitChan: exitChan,
 			}
 			go i.Start("servicenow", rc.Runner.PackDir, rc.Runner.GetAddress())
 		}
 	}
 
-	select {
-	case <-ctx.Done():
-		log.Fatal("One or more integrations failed to start. Whoopsie!")
-	}
+	// Here is an example of how this can work, we can tell the servers to exit with a channel
+	// Need to change this to be a channel per server
+	// Also need a status check
+	//time.Sleep(5*time.Second)
+	//exitChan <- true
+
 }

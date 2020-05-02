@@ -20,8 +20,6 @@ var runCmd = &cobra.Command{
 		// start the API server first
 
 		pi := pack.GetPackIndex(viper.GetString("contentdir"))
-
-		api.Start(":8080", pi)
 		// Pull the default content repository
 		p, err := pi.GetOrClone(DEFAULT_PACK, DEFAULT_REPO)
 
@@ -30,6 +28,9 @@ var runCmd = &cobra.Command{
 		}
 		rc := runner.GetRunConfig(p.Path)
 		rc.RunAll()
+
+		api.Start(":8080", pi)
+
 	},
 }
 

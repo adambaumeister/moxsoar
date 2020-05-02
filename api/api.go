@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/adambaumeister/moxsoar/pack"
 	"github.com/dgrijalva/jwt-go"
 	"log"
@@ -9,26 +10,29 @@ import (
 	"time"
 )
 
-var users = map[string]string{
-	"user1": "password1",
-}
-
 var jwtKey = []byte("FakeKeySon!")
 
 type api struct {
 	PackIndex *pack.PackIndex
+
+	Users map[string]string
 }
 
 func Start(addr string, pi *pack.PackIndex) {
 
 	a := api{
 		PackIndex: pi,
+		Users: map[string]string{
+			"user1": "password1",
+		},
 	}
 	httpMux := http.NewServeMux()
 	s := http.Server{Addr: addr, Handler: httpMux}
 
 	httpMux.HandleFunc("/auth", a.auth)
 	httpMux.HandleFunc("/packs", a.getPacks)
+	httpMux.HandleFunc("/adduser", a.addUser)
+	httpMux.HandleFunc("/refreshauth", refreshAuth)
 
 	s.ListenAndServe()
 	err := s.ListenAndServe()
@@ -48,11 +52,17 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	// Check the PW matches with what's in the DB
-	expectedPassword, ok := users[creds.Username]
+	expectedPassword, ok := a.Users[creds.Username]
+	c := Hash{}
 
-	if !ok || expectedPassword != creds.Password {
-		writer.WriteHeader(http.StatusUnauthorized)
-		return
+	checkHashResult := c.Compare(expectedPassword, creds.Password)
+	if checkHashResult != nil {
+		// If hash doesn't match, check cleartext
+		// This lets us populate the default admin password easier
+		if !ok || expectedPassword != creds.Password {
+			writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 	}
 
 	expirationTime := time.Now().Add(30 * time.Minute)
@@ -81,17 +91,17 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 
 }
 
-func checkAuth(writer http.ResponseWriter, request *http.Request) string {
+func checkAuth(writer http.ResponseWriter, request *http.Request) (*Claims, *jwt.Token) {
 	c, err := request.Cookie("token")
 	if err != nil {
 		if err == http.ErrNoCookie {
 			// If the cookie is not set, return an unauthorized status
 			writer.WriteHeader(http.StatusUnauthorized)
-			return ""
+			return nil, nil
 		}
 		// For any other type of error, return a bad request status
 		writer.WriteHeader(http.StatusBadRequest)
-		return ""
+		return nil, nil
 	}
 
 	// Get the JWT string from the cookie
@@ -110,28 +120,92 @@ func checkAuth(writer http.ResponseWriter, request *http.Request) string {
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
 			writer.WriteHeader(http.StatusUnauthorized)
-			return ""
+			return nil, nil
 		}
 		writer.WriteHeader(http.StatusBadRequest)
-		return ""
+		return nil, nil
 	}
 	if !tkn.Valid {
 		writer.WriteHeader(http.StatusUnauthorized)
-		return ""
+		return nil, nil
 	}
 
 	// Finally, return the welcome message to the user, along with their
 	// username given in the token
-	return claims.Username
+	return claims, tkn
+}
+
+func refreshAuth(writer http.ResponseWriter, request *http.Request) {
+	// Refresh the token attached to a user
+
+	// First check the autth is actually valid and error out of it isn't
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+
+	claims := &Claims{}
+	newExpTime := time.Now().Add(30 * time.Minute)
+
+	claims.ExpiresAt = newExpTime.Unix()
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtKey)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(writer, &http.Cookie{
+		Name:    "token",
+		Value:   tokenString,
+		Expires: newExpTime,
+	})
 }
 
 func (a *api) getPacks(writer http.ResponseWriter, request *http.Request) {
 	// Validate the user is authenticated
-	checkAuth(writer, request)
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
 
 	packs := a.PackIndex.Packs
 	r := GetPacksResponse{
 		Packs: packs,
+	}
+
+	b := MarshalToJson(r)
+	writer.Write(b)
+}
+
+func (a *api) addUser(writer http.ResponseWriter, request *http.Request) {
+
+	// Validate the user is authenticated
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+
+	var creds Credentials
+	err := json.NewDecoder(request.Body).Decode(&creds)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	c := Hash{}
+	hpwd, err := c.Generate(creds.Password)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	a.Users[creds.Username] = hpwd
+
+	r := AddUserMessage{
+		Message: fmt.Sprintf("Added user: %v", creds.Username),
 	}
 
 	b := MarshalToJson(r)
