@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/adambaumeister/moxsoar/pack"
-	"github.com/adambaumeister/moxsoar/runner"
 	"github.com/dgrijalva/jwt-go"
 	"log"
 	"net/http"
@@ -232,7 +231,7 @@ func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	rc := runner.GetRunConfig(p.Path)
+	rc := pack.GetRunConfig(p.Path)
 	r := GetRunnerResponse{
 		RunConfig: rc,
 	}

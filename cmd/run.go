@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/adambaumeister/moxsoar/api"
 	"github.com/adambaumeister/moxsoar/pack"
-	"github.com/adambaumeister/moxsoar/runner"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
@@ -26,7 +25,7 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal("Could not load default pack name %v during startup!", DEFAULT_PACK)
 		}
-		rc := runner.GetRunConfig(p.Path)
+		rc := pack.GetRunConfig(p.Path)
 		rc.RunAll()
 
 		api.Start(":8080", pi, viper.GetString("datadir"))

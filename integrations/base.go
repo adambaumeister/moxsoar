@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/adambaumeister/moxsoar/api"
 	"github.com/adambaumeister/moxsoar/tracker"
 	"io/ioutil"
 	"log"
@@ -106,7 +105,7 @@ func (bi *BaseIntegration) Start(integrationName string, packDir string, addr st
 			r := bi.Dispatch(request, packDir)
 			fb, err := ioutil.ReadFile(path.Join(packDir, integrationName, r.ResponseFile))
 			if err != nil {
-				sendError(writer, api.ErrorMessage(fmt.Sprintf("Failed to read: %v", r.ResponseFile)))
+				writer.WriteHeader(http.StatusInternalServerError)
 			}
 			_, err = writer.Write(fb)
 		})

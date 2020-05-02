@@ -1,4 +1,4 @@
-package runner
+package pack
 
 import (
 	"context"
@@ -16,6 +16,7 @@ const DEFAULT_RUNNER_CONFIG = "runner.yml"
 RunConfig is the configuration passed to the runner object
 */
 type RunConfig struct {
+	Info   Info
 	Runner Runner
 	Run    []Run
 }
@@ -40,6 +41,12 @@ type Run struct {
 	Integration string
 }
 
+type Info struct {
+	Description string
+	Author      string
+	Version     string
+}
+
 func (r *Runner) GetAddress() string {
 	// Get the next port/address combo
 	a := fmt.Sprintf("%v:%v", r.Address, r.currentPort)
@@ -57,6 +64,7 @@ func GetRunConfig(packDir string) RunConfig {
 	}
 
 	rc := RunConfig{}
+
 	rc.Runner.PackDir = packDir
 	err = yaml.Unmarshal(b, &rc)
 
