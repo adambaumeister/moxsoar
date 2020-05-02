@@ -15,16 +15,31 @@ var jwtKey = []byte("FakeKeySon!")
 type api struct {
 	PackIndex *pack.PackIndex
 
-	Users map[string]string
+	Users map[string]*User
+
+	UserDB *JSONPasswordDB
 }
 
-func Start(addr string, pi *pack.PackIndex) {
+func Start(addr string, pi *pack.PackIndex, userfile string) {
+
+	jpdb := JSONPasswordDB{
+		Path: userfile,
+	}
+
+	defaultAdminUser := User{
+		Credentials: Credentials{
+			Username: "admin",
+			Password: "admin",
+		},
+		Name: "Default Administrative User",
+	}
 
 	a := api{
 		PackIndex: pi,
-		Users: map[string]string{
-			"user1": "password1",
+		Users: map[string]*User{
+			"admin": &defaultAdminUser,
 		},
+		UserDB: &jpdb,
 	}
 	httpMux := http.NewServeMux()
 	s := http.Server{Addr: addr, Handler: httpMux}
@@ -34,7 +49,6 @@ func Start(addr string, pi *pack.PackIndex) {
 	httpMux.HandleFunc("/adduser", a.addUser)
 	httpMux.HandleFunc("/refreshauth", refreshAuth)
 
-	s.ListenAndServe()
 	err := s.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
@@ -52,14 +66,14 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	// Check the PW matches with what's in the DB
-	expectedPassword, ok := a.Users[creds.Username]
+	user, ok := a.Users[creds.Username]
 	c := Hash{}
 
-	checkHashResult := c.Compare(expectedPassword, creds.Password)
+	checkHashResult := c.Compare(user.Credentials.Password, creds.Password)
 	if checkHashResult != nil {
 		// If hash doesn't match, check cleartext
 		// This lets us populate the default admin password easier
-		if !ok || expectedPassword != creds.Password {
+		if !ok || user.Credentials.Password != creds.Password {
 			writer.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -202,12 +216,30 @@ func (a *api) addUser(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	a.Users[creds.Username] = hpwd
+	user := User{
+		Credentials: Credentials{
+			Username: creds.Username,
+			Password: hpwd,
+		},
+	}
+
+	a.Users[creds.Username] = &user
+
+	err = a.UserDB.Write(a.Users)
+	if err != nil {
+		fmt.Printf("error writing file: %v", err)
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	r := AddUserMessage{
 		Message: fmt.Sprintf("Added user: %v", creds.Username),
 	}
 
 	b := MarshalToJson(r)
-	writer.Write(b)
+	_, err = writer.Write(b)
+	if err != nil {
+		panic("Failed to write response http")
+	}
+
 }

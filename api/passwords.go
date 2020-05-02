@@ -1,7 +1,10 @@
 package api
 
 import (
+	"encoding/json"
 	"golang.org/x/crypto/bcrypt"
+	"io/ioutil"
+	"os"
 )
 
 type Hash struct {
@@ -36,14 +39,14 @@ type JSONPasswordDB struct {
 	Path string
 }
 
-func GetJsonPasswordDB(path string) *JSONPasswordDB {
-	jpdb := JSONPasswordDB{
-		Path: path,
+func (jpdb *JSONPasswordDB) Write(db map[string]*User) error {
+	b, err := json.Marshal(db)
+	if err != nil {
+		return err
 	}
-
-	return &jpdb
-}
-
-func (jpdb *JSONPasswordDB) Write(map[string]User) {
-
+	err = ioutil.WriteFile(jpdb.Path, b, os.FileMode(600))
+	if err != nil {
+		return err
+	}
+	return nil
 }

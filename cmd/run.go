@@ -29,7 +29,7 @@ var runCmd = &cobra.Command{
 		rc := runner.GetRunConfig(p.Path)
 		rc.RunAll()
 
-		api.Start(":8080", pi)
+		api.Start(":8080", pi, viper.GetString("datadir"))
 
 	},
 }
