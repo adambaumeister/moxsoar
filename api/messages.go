@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"github.com/adambaumeister/moxsoar/pack"
+	"github.com/adambaumeister/moxsoar/runner"
 	"github.com/dgrijalva/jwt-go"
 	"log"
 )
@@ -33,6 +34,10 @@ Pack messages
 */
 type GetPacksResponse struct {
 	Packs []*pack.Pack
+}
+
+type GetRunnerResponse struct {
+	RunConfig runner.RunConfig
 }
 
 func ErrorMessage(m string) []byte {

@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/adambaumeister/moxsoar/pack"
+	"github.com/adambaumeister/moxsoar/runner"
 	"github.com/dgrijalva/jwt-go"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -46,6 +48,7 @@ func Start(addr string, pi *pack.PackIndex, userfile string) {
 
 	httpMux.HandleFunc("/auth", a.auth)
 	httpMux.HandleFunc("/packs", a.getPacks)
+	httpMux.HandleFunc("/packs/", a.getPack)
 	httpMux.HandleFunc("/adduser", a.addUser)
 	httpMux.HandleFunc("/refreshauth", refreshAuth)
 
@@ -57,6 +60,10 @@ func Start(addr string, pi *pack.PackIndex, userfile string) {
 }
 
 func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
+	/*
+		Authenticate the API client
+	*/
+
 	// Get an authentication request message JSON
 	var creds Credentials
 	err := json.NewDecoder(request.Body).Decode(&creds)
@@ -106,6 +113,9 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 }
 
 func checkAuth(writer http.ResponseWriter, request *http.Request) (*Claims, *jwt.Token) {
+	/*
+		Validate the auth ticket is still valid
+	*/
 	c, err := request.Cookie("token")
 	if err != nil {
 		if err == http.ErrNoCookie {
@@ -179,6 +189,10 @@ func refreshAuth(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (a *api) getPacks(writer http.ResponseWriter, request *http.Request) {
+	/*
+		Get all the content packs on the system
+	*/
+
 	// Validate the user is authenticated
 	_, tkn := checkAuth(writer, request)
 	if tkn == nil {
@@ -192,6 +206,42 @@ func (a *api) getPacks(writer http.ResponseWriter, request *http.Request) {
 
 	b := MarshalToJson(r)
 	writer.Write(b)
+}
+
+func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
+	/*
+		Functions related to pack manipulation
+	*/
+
+	// Validate the user is authenticated
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+
+	s := strings.Split(request.URL.Path, "/")
+	if len(s) < 2 {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	packName := s[2]
+
+	p, err := a.PackIndex.GetPackName(packName)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	rc := runner.GetRunConfig(p.Path)
+	r := GetRunnerResponse{
+		RunConfig: rc,
+	}
+
+	b := MarshalToJson(r)
+	_, err = writer.Write(b)
+	if err != nil {
+		panic("Failed to write response http")
+	}
 }
 
 func (a *api) addUser(writer http.ResponseWriter, request *http.Request) {
