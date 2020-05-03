@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/adambaumeister/moxsoar/integrations"
 	"github.com/adambaumeister/moxsoar/pack"
 	"github.com/dgrijalva/jwt-go"
 	"log"
@@ -33,6 +34,15 @@ Pack messages
 */
 type GetPacksResponse struct {
 	Packs []*pack.Pack
+}
+
+/*
+INtegration messages
+*/
+
+type GetIntegration struct {
+	Integration string
+	Routes      []integrations.Route
 }
 
 type GetRunnerResponse struct {

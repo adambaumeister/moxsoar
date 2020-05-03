@@ -14,12 +14,16 @@ import (
 	"time"
 )
 
+const ROUTE_FILE = "routes.json"
+
 type BaseIntegration struct {
 	Routes []Route
 
 	Ctx      context.Context
 	ExitChan chan bool
 	Tracker  tracker.DebugTracker
+
+	Name string
 }
 
 func (bi *BaseIntegration) GetRoute(url string, method string) Method {
@@ -71,7 +75,7 @@ func (bi *BaseIntegration) Start(integrationName string, packDir string, addr st
 	/*
 		Register the HTTP handlers and start the integration
 	*/
-	bi.ReadRoutes(path.Join(packDir, integrationName, "routes.json"))
+	bi.ReadRoutes(path.Join(packDir, integrationName, ROUTE_FILE))
 
 	httpMux := http.NewServeMux()
 	s := http.Server{Addr: addr, Handler: httpMux}
@@ -99,7 +103,7 @@ func (bi *BaseIntegration) Start(integrationName string, packDir string, addr st
 			t.Track(request)
 
 			// Read the route table within the http handler, such that it is dynamic
-			bi.ReadRoutes(path.Join(packDir, integrationName, "routes.json"))
+			bi.ReadRoutes(path.Join(packDir, integrationName, ROUTE_FILE))
 
 			// HandleFunc gets defined when the server starts, dispatch runs when a request is received
 			r := bi.Dispatch(request, packDir)

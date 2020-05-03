@@ -232,8 +232,20 @@ func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	rc := pack.GetRunConfig(p.Path)
-	r := GetRunnerResponse{
-		RunConfig: rc,
+
+	var r interface{}
+	// We've asked for something other than just the pack itself
+	if len(s) == 4 {
+		integrationName := s[3]
+		r, err = getIntegration(integrationName, rc)
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			r = Error{Message: err.Error()}
+		}
+	} else {
+		r = GetRunnerResponse{
+			RunConfig: rc,
+		}
 	}
 
 	b := MarshalToJson(r)
@@ -291,4 +303,19 @@ func (a *api) addUser(writer http.ResponseWriter, request *http.Request) {
 		panic("Failed to write response http")
 	}
 
+}
+
+func getIntegration(name string, rc pack.RunConfig) (*GetIntegration, error) {
+	ints := rc.GetIntegrations()
+
+	r := GetIntegration{}
+	for _, integration := range ints {
+		if integration.Name == name {
+			r.Routes = integration.Routes
+			r.Integration = name
+			return &r, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Integration %v not found", name)
 }
