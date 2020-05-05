@@ -115,6 +115,13 @@ func (rc *RunConfig) RunAll() {
 				ExitChan: exitChan,
 			}
 			go i.Start("servicenow", rc.Runner.PackDir, rc.Runner.GetAddress())
+		default:
+			fmt.Printf("Starting %v integration.\n", run.Integration)
+			i := integrations.BaseIntegration{
+				Ctx:      ctx,
+				ExitChan: exitChan,
+			}
+			go i.Start(run.Integration, rc.Runner.PackDir, rc.Runner.GetAddress())
 		}
 	}
 

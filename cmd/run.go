@@ -12,7 +12,8 @@ const DEFAULT_PACK = "moxsoar-content"
 const DEFAULT_REPO = "https://github.com/adambaumeister/moxsoar-content.git"
 
 var runCmd = &cobra.Command{
-	Use:   "run",
+	Use: "run",
+
 	Short: "Start the server.",
 	Long:  "Starts all configured Mock engines and content.",
 	Run: func(cmd *cobra.Command, args []string) {

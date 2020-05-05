@@ -12,6 +12,10 @@ type Error struct {
 	Message string
 }
 
+type StatusMessage struct {
+	Message string
+}
+
 /*
 Auth messages
 */

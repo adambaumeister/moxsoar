@@ -21,6 +21,13 @@ type api struct {
 	UserDB *JSONPasswordDB
 }
 
+func enableCors(w *http.ResponseWriter) {
+	// This is for development work only,
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+}
+
 func Start(addr string, pi *pack.PackIndex, userfile string) {
 
 	jpdb := JSONPasswordDB{
@@ -62,6 +69,7 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 	/*
 		Authenticate the API client
 	*/
+	enableCors(&writer)
 
 	// Get an authentication request message JSON
 	var creds Credentials
@@ -73,6 +81,17 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 
 	// Check the PW matches with what's in the DB
 	user, ok := a.Users[creds.Username]
+	if !ok {
+		writer.WriteHeader(http.StatusUnauthorized)
+		r := Error{
+			Message: "User does not exist!",
+		}
+		b := MarshalToJson(r)
+		writer.Write(b)
+
+		return
+	}
+
 	c := Hash{}
 
 	checkHashResult := c.Compare(user.Credentials.Password, creds.Password)
@@ -81,6 +100,12 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 		// This lets us populate the default admin password easier
 		if !ok || user.Credentials.Password != creds.Password {
 			writer.WriteHeader(http.StatusUnauthorized)
+			r := Error{
+				Message: "Invalid password.",
+			}
+			b := MarshalToJson(r)
+			writer.Write(b)
+
 			return
 		}
 	}
@@ -101,6 +126,7 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	http.SetCookie(writer, &http.Cookie{
@@ -109,12 +135,21 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 		Expires: expirationTime,
 	})
 
+	r := StatusMessage{
+		Message: "Logged in!",
+	}
+
+	b := MarshalToJson(r)
+	writer.Write(b)
+
 }
 
 func checkAuth(writer http.ResponseWriter, request *http.Request) (*Claims, *jwt.Token) {
 	/*
 		Validate the auth ticket is still valid
 	*/
+	enableCors(&writer)
+
 	c, err := request.Cookie("token")
 	if err != nil {
 		if err == http.ErrNoCookie {
