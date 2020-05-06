@@ -50,7 +50,7 @@ type GetIntegration struct {
 }
 
 type GetRunnerResponse struct {
-	RunConfig pack.RunConfig
+	RunConfig *pack.RunConfig
 }
 
 func ErrorMessage(m string) []byte {

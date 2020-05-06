@@ -19,6 +19,8 @@ type RunConfig struct {
 	Info   Info
 	Runner Runner
 	Run    []Run
+
+	Running []*integrations.BaseIntegration
 }
 
 /*
@@ -71,7 +73,7 @@ func (r *Runner) GetAddress() string {
 	return a
 }
 
-func GetRunConfig(packDir string) RunConfig {
+func GetRunConfig(packDir string) *RunConfig {
 	// Get the runner configuration
 
 	b, err := ioutil.ReadFile(path.Join(packDir, DEFAULT_RUNNER_CONFIG))
@@ -89,7 +91,7 @@ func GetRunConfig(packDir string) RunConfig {
 	}
 	rc.Runner.currentPort = rc.Runner.PortMin
 
-	return rc
+	return &rc
 }
 
 func (rc *RunConfig) RunAll() {
@@ -101,27 +103,17 @@ func (rc *RunConfig) RunAll() {
 	exitChan := make(chan bool)
 	for _, run := range rc.Run {
 		switch run.Integration {
-		case "minemeld":
-			fmt.Printf("Starting minemeld integration.\n")
-			i := integrations.BaseIntegration{
-				Ctx:      ctx,
-				ExitChan: exitChan,
-			}
-			go i.Start("minemeld", rc.Runner.PackDir, rc.Runner.GetAddress())
-		case "servicenow":
-			fmt.Printf("Starting SNOW integration.\n")
-			i := integrations.BaseIntegration{
-				Ctx:      ctx,
-				ExitChan: exitChan,
-			}
-			go i.Start("servicenow", rc.Runner.PackDir, rc.Runner.GetAddress())
 		default:
+			addr := rc.Runner.GetAddress()
 			fmt.Printf("Starting %v integration.\n", run.Integration)
 			i := integrations.BaseIntegration{
+				Name:     run.Integration,
 				Ctx:      ctx,
 				ExitChan: exitChan,
+				Addr:     addr,
 			}
-			go i.Start(run.Integration, rc.Runner.PackDir, rc.Runner.GetAddress())
+			go i.Start(run.Integration, rc.Runner.PackDir)
+			rc.Running = append(rc.Running, &i)
 		}
 	}
 

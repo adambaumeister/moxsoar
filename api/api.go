@@ -15,6 +15,7 @@ var jwtKey = []byte("FakeKeySon!")
 
 type api struct {
 	PackIndex *pack.PackIndex
+	RunConfig *pack.RunConfig
 
 	Users map[string]*User
 
@@ -28,7 +29,7 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
-func Start(addr string, pi *pack.PackIndex, userfile string) {
+func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string) {
 
 	jpdb := JSONPasswordDB{
 		Path: userfile,
@@ -47,7 +48,8 @@ func Start(addr string, pi *pack.PackIndex, userfile string) {
 		Users: map[string]*User{
 			"admin": &defaultAdminUser,
 		},
-		UserDB: &jpdb,
+		RunConfig: rc,
+		UserDB:    &jpdb,
 	}
 	httpMux := http.NewServeMux()
 	s := http.Server{Addr: addr, Handler: httpMux}
@@ -234,6 +236,7 @@ func (a *api) getPacks(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	packs := a.PackIndex.Packs
+
 	r := GetPacksResponse{
 		Packs: packs,
 	}
@@ -258,16 +261,9 @@ func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	packName := s[2]
 
-	p, err := a.PackIndex.GetPackName(packName)
-	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	rc := pack.GetRunConfig(p.Path)
-
+	var err error
+	rc := a.RunConfig
 	var r interface{}
 	// We've asked for something other than just the pack itself
 	if len(s) == 4 {
@@ -340,7 +336,7 @@ func (a *api) addUser(writer http.ResponseWriter, request *http.Request) {
 
 }
 
-func getIntegration(name string, rc pack.RunConfig) (*GetIntegration, error) {
+func getIntegration(name string, rc *pack.RunConfig) (*GetIntegration, error) {
 	ints := rc.GetIntegrations()
 
 	r := GetIntegration{}

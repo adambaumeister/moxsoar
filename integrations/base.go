@@ -17,11 +17,11 @@ import (
 const ROUTE_FILE = "routes.json"
 
 type BaseIntegration struct {
-	Routes []Route
-
-	Ctx      context.Context
-	ExitChan chan bool
-	Tracker  tracker.DebugTracker
+	Routes   []Route
+	Addr     string
+	Ctx      context.Context      `json:"none"`
+	ExitChan chan bool            `json:"none"`
+	Tracker  tracker.DebugTracker `json:"none"`
 
 	Name string
 }
@@ -71,10 +71,11 @@ func defaultHandler(_ http.ResponseWriter, request *http.Request) {
 	t.Track(request)
 }
 
-func (bi *BaseIntegration) Start(integrationName string, packDir string, addr string) {
+func (bi *BaseIntegration) Start(integrationName string, packDir string) {
 	/*
 		Register the HTTP handlers and start the integration
 	*/
+	addr := bi.Addr
 	bi.ReadRoutes(path.Join(packDir, integrationName, ROUTE_FILE))
 
 	httpMux := http.NewServeMux()
