@@ -62,6 +62,11 @@ func ErrorMessage(m string) []byte {
 
 }
 
+type GetRoute struct {
+	Route          integrations.Route
+	ResponseString string
+}
+
 func MarshalToJson(m interface{}) []byte {
 	b, err := json.Marshal(m)
 	if err != nil {

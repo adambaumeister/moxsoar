@@ -22,6 +22,7 @@ type BaseIntegration struct {
 	Ctx      context.Context      `json:"none"`
 	ExitChan chan bool            `json:"none"`
 	Tracker  tracker.DebugTracker `json:"none"`
+	PackDir  string               `json:"none"`
 
 	Name string
 }
@@ -71,10 +72,11 @@ func defaultHandler(_ http.ResponseWriter, request *http.Request) {
 	t.Track(request)
 }
 
-func (bi *BaseIntegration) Start(integrationName string, packDir string) {
+func (bi *BaseIntegration) Start(integrationName string) {
 	/*
 		Register the HTTP handlers and start the integration
 	*/
+	packDir := bi.PackDir
 	addr := bi.Addr
 	bi.ReadRoutes(path.Join(packDir, integrationName, ROUTE_FILE))
 

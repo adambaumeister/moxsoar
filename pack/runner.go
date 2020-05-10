@@ -111,8 +111,9 @@ func (rc *RunConfig) RunAll() {
 				Ctx:      ctx,
 				ExitChan: exitChan,
 				Addr:     addr,
+				PackDir:  rc.Runner.PackDir,
 			}
-			go i.Start(run.Integration, rc.Runner.PackDir)
+			go i.Start(run.Integration)
 			rc.Running = append(rc.Running, &i)
 		}
 	}

@@ -3,10 +3,14 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/adambaumeister/moxsoar/integrations"
 	"github.com/adambaumeister/moxsoar/pack"
 	"github.com/dgrijalva/jwt-go"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"path"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -272,7 +276,31 @@ func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			r = Error{Message: err.Error()}
+			return
 		}
+	} else if len(s) == 5 {
+		integrationName := s[3]
+		packId, _ := strconv.Atoi(s[4])
+		// need to handle this err
+		i := getIntegrationObject(integrationName, rc)
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			r = Error{Message: err.Error()}
+			return
+		}
+		fn := i.Routes[packId].ResponseFile
+		fb, err := ioutil.ReadFile(path.Join(i.PackDir, integrationName, fn))
+		fmt.Printf("DEBUG: %v\n", path.Join(i.PackDir, integrationName, fn))
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			r = Error{Message: err.Error()}
+			return
+		}
+		r = GetRoute{
+			Route:          i.Routes[packId],
+			ResponseString: string(fb),
+		}
+
 	} else {
 		r = GetRunnerResponse{
 			RunConfig: rc,
@@ -349,4 +377,15 @@ func getIntegration(name string, rc *pack.RunConfig) (*GetIntegration, error) {
 	}
 
 	return nil, fmt.Errorf("Integration %v not found", name)
+}
+
+func getIntegrationObject(name string, rc *pack.RunConfig) *integrations.BaseIntegration {
+	ints := rc.Running
+
+	for _, integration := range ints {
+		if integration.Name == name {
+			return integration
+		}
+	}
+	return nil
 }
