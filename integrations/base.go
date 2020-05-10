@@ -17,7 +17,7 @@ import (
 const ROUTE_FILE = "routes.json"
 
 type BaseIntegration struct {
-	Routes   []Route
+	Routes   []*Route
 	Addr     string
 	Ctx      context.Context      `json:"none"`
 	ExitChan chan bool            `json:"none"`
@@ -135,6 +135,17 @@ func (bi *BaseIntegration) ReadRoutes(routeFile string) {
 
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	for _, route := range bi.Routes {
+		if route.Methods == nil {
+			m := Method{
+				ResponseFile: route.ResponseFile,
+				ResponseCode: route.ResponseCode,
+				HttpMethod:   "GET",
+			}
+			route.Methods = []Method{m}
+		}
 	}
 
 }

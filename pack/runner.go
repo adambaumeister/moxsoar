@@ -44,19 +44,11 @@ type Run struct {
 	Integration string
 
 	// This is the actual object we retrieve later.
-	integration integrations.BaseIntegration
+	integration *integrations.BaseIntegration
 }
 
-func (rc *RunConfig) GetIntegrations() []integrations.BaseIntegration {
-	// Returns all the integration types
-	var ints []integrations.BaseIntegration
-	for _, run := range rc.Run {
-		run.integration.ReadRoutes(path.Join(rc.Runner.PackDir, run.Integration, "routes.json"))
-		run.integration.Name = run.Integration
-		ints = append(ints, run.integration)
-	}
-
-	return ints
+func (rc *RunConfig) GetIntegrations() []*integrations.BaseIntegration {
+	return rc.Running
 }
 
 type Info struct {

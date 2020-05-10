@@ -290,7 +290,6 @@ func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
 		}
 		fn := i.Routes[packId].ResponseFile
 		fb, err := ioutil.ReadFile(path.Join(i.PackDir, integrationName, fn))
-		fmt.Printf("DEBUG: %v\n", path.Join(i.PackDir, integrationName, fn))
 		if err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			r = Error{Message: err.Error()}

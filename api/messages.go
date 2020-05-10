@@ -46,7 +46,7 @@ INtegration messages
 
 type GetIntegration struct {
 	Integration string
-	Routes      []integrations.Route
+	Routes      []*integrations.Route
 }
 
 type GetRunnerResponse struct {
@@ -63,7 +63,7 @@ func ErrorMessage(m string) []byte {
 }
 
 type GetRoute struct {
-	Route          integrations.Route
+	Route          *integrations.Route
 	ResponseString string
 }
 
