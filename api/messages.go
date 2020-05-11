@@ -40,6 +40,15 @@ type GetPacksResponse struct {
 	Packs []*pack.Pack
 }
 
+type CloneRequest struct {
+	PackName string
+	Repo     string
+}
+
+type CloneResponse struct {
+	Message string
+}
+
 /*
 INtegration messages
 */

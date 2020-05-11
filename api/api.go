@@ -63,7 +63,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string)
 	httpMux.HandleFunc("/packs/", a.getPack)
 	httpMux.HandleFunc("/adduser", a.addUser)
 	httpMux.HandleFunc("/refreshauth", refreshAuth)
-	httpMux.HandleFunc("/clone", refreshAuth)
+	httpMux.HandleFunc("/packs/clone", a.clonePack)
 
 	err := s.ListenAndServe()
 	if err != nil {
@@ -317,6 +317,43 @@ func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		panic("Failed to write response http")
 	}
+}
+
+func (a *api) clonePack(writer http.ResponseWriter, request *http.Request) {
+	// Validate the user is authenticated
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+
+	cloneReq := CloneRequest{}
+	err := json.NewDecoder(request.Body).Decode(&cloneReq)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		r := ErrorMessage("Malformed request.")
+		writer.Write(r)
+		return
+	}
+
+	//fmt.Printf("debug %v %v", cloneReq.PackName, cloneReq.Repo)
+	clonedPack, err := a.PackIndex.GetOrClone(cloneReq.PackName, cloneReq.Repo)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		r := ErrorMessage(err.Error())
+		writer.Write(r)
+		return
+	}
+
+	cr := CloneResponse{
+		Message: fmt.Sprintf("Sucessfully cloned pack: %v", clonedPack.Name),
+	}
+
+	b := MarshalToJson(cr)
+	_, err = writer.Write(b)
+	if err != nil {
+		panic("Failed to write response http")
+	}
+
 }
 
 func (a *api) addUser(writer http.ResponseWriter, request *http.Request) {

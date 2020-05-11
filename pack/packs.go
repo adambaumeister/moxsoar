@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 )
@@ -45,7 +44,11 @@ func (p *PackIndex) GetPackName(pn string) (*Pack, error) {
 func (pi *PackIndex) GetOrClone(packName string, repopath string) (*Pack, error) {
 	p, _ := pi.GetPackName(packName)
 	if p == nil {
-		pi.Get(packName, repopath)
+		err := pi.Get(packName, repopath)
+		if err != nil {
+			return nil, err
+		}
+
 	}
 	p, err := pi.GetPackName(packName)
 	if err != nil {
@@ -68,11 +71,11 @@ func (pi *PackIndex) Reindex() {
 
 }
 
-func (p *PackIndex) Get(packName string, repopath string) {
+func (p *PackIndex) Get(packName string, repopath string) error {
 	// Retrieve a pack from the given git url
 	_, err := GetPackFromGit(path.Join(p.ContentDir, packName), repopath)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	newPack := Pack{
 		Name: packName,
@@ -81,6 +84,7 @@ func (p *PackIndex) Get(packName string, repopath string) {
 
 	p.Packs = append(p.Packs, &newPack)
 	p.WritePackIndex(p.indexfile)
+	return nil
 }
 
 func GetPackIndex(contentDir string) *PackIndex {
