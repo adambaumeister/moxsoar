@@ -79,18 +79,7 @@ func (bi *BaseIntegration) Start(integrationName string) {
 	bi.ReadRoutes(path.Join(packDir, integrationName, ROUTE_FILE))
 
 	httpMux := http.NewServeMux()
-	s := http.Server{Addr: addr, Handler: httpMux}
-
-	// This starts a func in the background that just sits listening for input on that channel, then executes
-	// very cool
-	go func() {
-		<-bi.ExitChan
-		fmt.Printf("requested shutdown\n")
-
-		if err := s.Shutdown(context.Background()); err != nil {
-			log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
-		}
-	}()
+	s := &http.Server{Addr: addr, Handler: httpMux}
 
 	httpMux.HandleFunc("/", defaultHandler)
 	for _, route := range bi.Routes {
@@ -113,10 +102,22 @@ func (bi *BaseIntegration) Start(integrationName string) {
 
 	}
 
-	err := s.ListenAndServe()
-	if err != nil {
-		log.Fatal(err)
+	// This starts a func in the background that just sits listening for input on that channel, then executes
+	// very cool
+	go func() {
+		<-bi.ExitChan
+		fmt.Printf("requested shutdown\n")
+
+		if err := s.Shutdown(context.Background()); err != nil {
+			log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
+		}
+	}()
+
+	if err := s.ListenAndServe(); err != http.ErrServerClosed {
+		// Error starting or closing listener:
+		log.Printf("HTTP server ListenAndServe: %v", err)
 	}
+
 }
 
 func (bi *BaseIntegration) ReadRoutes(routeFile string) {
