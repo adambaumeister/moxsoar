@@ -63,6 +63,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string)
 	httpMux.HandleFunc("/packs/", a.getPack)
 	httpMux.HandleFunc("/adduser", a.addUser)
 	httpMux.HandleFunc("/refreshauth", refreshAuth)
+	httpMux.HandleFunc("/clone", refreshAuth)
 
 	err := s.ListenAndServe()
 	if err != nil {
@@ -288,16 +289,21 @@ func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
 			r = Error{Message: err.Error()}
 			return
 		}
-		fn := i.Routes[packId].ResponseFile
-		fb, err := ioutil.ReadFile(path.Join(i.PackDir, integrationName, fn))
-		if err != nil {
-			writer.WriteHeader(http.StatusInternalServerError)
-			r = Error{Message: err.Error()}
-			return
+		for _, m := range i.Routes[packId].Methods {
+			fn := m.ResponseFile
+			fb, err := ioutil.ReadFile(path.Join(i.PackDir, integrationName, fn))
+			if err != nil {
+				writer.WriteHeader(http.StatusInternalServerError)
+				r = Error{Message: err.Error()}
+				return
+			}
+
+			m.ResponseString = string(fb)
+
 		}
+
 		r = GetRoute{
-			Route:          i.Routes[packId],
-			ResponseString: string(fb),
+			Route: i.Routes[packId],
 		}
 
 	} else {

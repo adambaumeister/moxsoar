@@ -27,7 +27,7 @@ type BaseIntegration struct {
 	Name string
 }
 
-func (bi *BaseIntegration) GetRoute(url string, method string) Method {
+func (bi *BaseIntegration) GetRoute(url string, method string) *Method {
 
 	// Get a route for a given request
 	for _, route := range bi.Routes {
@@ -36,7 +36,7 @@ func (bi *BaseIntegration) GetRoute(url string, method string) Method {
 			// If the route doesn't specify methods, and the path matches, return it
 			if route.Methods == nil {
 
-				return Method{
+				return &Method{
 					ResponseFile: route.ResponseFile,
 					ResponseCode: route.ResponseCode,
 					HttpMethod:   method,
@@ -60,7 +60,7 @@ func (bi *BaseIntegration) GetRoute(url string, method string) Method {
 	}
 
 	// If nothing matches, return this.
-	return Method{
+	return &Method{
 		ResponseFile: "default.json",
 		ResponseCode: 200,
 		HttpMethod:   method,
@@ -144,13 +144,13 @@ func (bi *BaseIntegration) ReadRoutes(routeFile string) {
 				ResponseCode: route.ResponseCode,
 				HttpMethod:   "GET",
 			}
-			route.Methods = []Method{m}
+			route.Methods = []*Method{&m}
 		}
 	}
 
 }
 
-func (bi *BaseIntegration) Dispatch(request *http.Request, packDir string) Method {
+func (bi *BaseIntegration) Dispatch(request *http.Request, packDir string) *Method {
 	// Used at runtime
 	m := bi.GetRoute(request.URL.Path, request.Method)
 	return m
@@ -165,7 +165,7 @@ type Route struct {
 	Path         string
 	ResponseFile string
 	ResponseCode int
-	Methods      []Method
+	Methods      []*Method
 }
 
 type Method struct {
@@ -173,4 +173,6 @@ type Method struct {
 	ResponseFile string
 	ResponseCode int
 	MatchRegex   string
+
+	ResponseString string
 }
