@@ -64,6 +64,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string)
 	httpMux.HandleFunc("/adduser", a.addUser)
 	httpMux.HandleFunc("/refreshauth", refreshAuth)
 	httpMux.HandleFunc("/packs/clone", a.clonePack)
+	httpMux.HandleFunc("/packs/activate", a.setPack)
 
 	err := s.ListenAndServe()
 	if err != nil {
@@ -198,6 +199,33 @@ func checkAuth(writer http.ResponseWriter, request *http.Request) (*Claims, *jwt
 	// Finally, return the welcome message to the user, along with their
 	// username given in the token
 	return claims, tkn
+}
+
+func (a *api) setPack(writer http.ResponseWriter, request *http.Request) {
+	// Activate a different pack
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+
+	var ar ActivateRequest
+	err := json.NewDecoder(request.Body).Decode(&ar)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	a.RunConfig.Shutdown()
+	p, err := a.PackIndex.ActivatePack(ar.PackName)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	a.RunConfig = pack.GetRunConfig(p.Path)
+	a.RunConfig.RunAll()
+
 }
 
 func refreshAuth(writer http.ResponseWriter, request *http.Request) {

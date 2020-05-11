@@ -49,6 +49,10 @@ type CloneResponse struct {
 	Message string
 }
 
+type ActivateRequest struct {
+	PackName string
+}
+
 /*
 INtegration messages
 */

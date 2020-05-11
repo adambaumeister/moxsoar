@@ -29,8 +29,24 @@ type Pack struct {
 	Comment string
 	Version string
 	Path    string
+	Active  bool
 }
 
+func (p *PackIndex) ActivatePack(pn string) (*Pack, error) {
+	pack, err := p.GetPackName(pn)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, oldPack := range p.Packs {
+		if oldPack.Active {
+			oldPack.Active = false
+		}
+	}
+
+	pack.Active = true
+	return pack, nil
+}
 func (p *PackIndex) GetPackName(pn string) (*Pack, error) {
 	p.Reindex()
 	for _, pack := range p.Packs {

@@ -1,7 +1,6 @@
 package pack
 
 import (
-	"context"
 	"fmt"
 	"github.com/adambaumeister/moxsoar/integrations"
 	"gopkg.in/yaml.v2"
@@ -91,16 +90,14 @@ func (rc *RunConfig) RunAll() {
 		Start all the configured mock integrations
 	*/
 
-	ctx := context.Background()
-	exitChan := make(chan bool)
 	for _, run := range rc.Run {
+		exitChan := make(chan bool)
 		switch run.Integration {
 		default:
 			addr := rc.Runner.GetAddress()
 			fmt.Printf("Starting %v integration.\n", run.Integration)
 			i := integrations.BaseIntegration{
 				Name:     run.Integration,
-				Ctx:      ctx,
 				ExitChan: exitChan,
 				Addr:     addr,
 				PackDir:  rc.Runner.PackDir,
@@ -116,4 +113,12 @@ func (rc *RunConfig) RunAll() {
 	//time.Sleep(5*time.Second)
 	//exitChan <- true
 
+}
+
+func (rc *RunConfig) Shutdown() {
+	// Shut down all the running integrations
+	for _, running := range rc.Running {
+		fmt.Printf("Shutting down %v\n", running.Name)
+		running.ExitChan <- true
+	}
 }

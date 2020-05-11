@@ -11,7 +11,6 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"time"
 )
 
 const ROUTE_FILE = "routes.json"
@@ -19,7 +18,6 @@ const ROUTE_FILE = "routes.json"
 type BaseIntegration struct {
 	Routes   []*Route
 	Addr     string
-	Ctx      context.Context      `json:"none"`
 	ExitChan chan bool            `json:"none"`
 	Tracker  tracker.DebugTracker `json:"none"`
 	PackDir  string               `json:"none"`
@@ -89,13 +87,9 @@ func (bi *BaseIntegration) Start(integrationName string) {
 		<-bi.ExitChan
 		fmt.Printf("requested shutdown\n")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		if err := s.Shutdown(ctx); err != nil {
+		if err := s.Shutdown(context.Background()); err != nil {
 			log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
 		}
-		bi.ExitChan <- true
 	}()
 
 	httpMux.HandleFunc("/", defaultHandler)
