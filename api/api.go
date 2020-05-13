@@ -95,7 +95,7 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 			Message: "User does not exist!",
 		}
 		b := MarshalToJson(r)
-		writer.Write(b)
+		_, _ = writer.Write(b)
 
 		return
 	}
@@ -112,7 +112,7 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 				Message: "Invalid password.",
 			}
 			b := MarshalToJson(r)
-			writer.Write(b)
+			_, _ = writer.Write(b)
 
 			return
 		}
@@ -143,12 +143,19 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 		Expires: expirationTime,
 	})
 
-	r := StatusMessage{
-		Message: "Logged in!",
+	http.SetCookie(writer, &http.Cookie{
+		Name:    "username",
+		Value:   creds.Username,
+		Expires: expirationTime,
+	})
+
+	r := LoginMessage{
+		Message:  "Logged in!",
+		Username: creds.Username,
 	}
 
 	b := MarshalToJson(r)
-	writer.Write(b)
+	_, _ = writer.Write(b)
 
 }
 
@@ -226,6 +233,12 @@ func (a *api) setPack(writer http.ResponseWriter, request *http.Request) {
 	a.RunConfig = pack.GetRunConfig(p.Path)
 	a.RunConfig.RunAll()
 
+	r := ActivateResponse{
+		Message: fmt.Sprintf("Activated pack %v", p.Name),
+	}
+	b := MarshalToJson(r)
+	_, _ = writer.Write(b)
+
 }
 
 func refreshAuth(writer http.ResponseWriter, request *http.Request) {
@@ -275,7 +288,7 @@ func (a *api) getPacks(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	b := MarshalToJson(r)
-	writer.Write(b)
+	_, _ = writer.Write(b)
 }
 
 func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
@@ -312,9 +325,9 @@ func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
 		packId, _ := strconv.Atoi(s[4])
 		// need to handle this err
 		i := getIntegrationObject(integrationName, rc)
-		if err != nil {
+		if i == nil {
 			writer.WriteHeader(http.StatusBadRequest)
-			r = Error{Message: err.Error()}
+			r = Error{Message: "Integration not found"}
 			return
 		}
 		for _, m := range i.Routes[packId].Methods {
@@ -359,7 +372,7 @@ func (a *api) clonePack(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		r := ErrorMessage("Malformed request.")
-		writer.Write(r)
+		_, _ = writer.Write(r)
 		return
 	}
 
@@ -368,7 +381,7 @@ func (a *api) clonePack(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		r := ErrorMessage(err.Error())
-		writer.Write(r)
+		_, _ = writer.Write(r)
 		return
 	}
 

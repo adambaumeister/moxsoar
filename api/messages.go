@@ -16,6 +16,11 @@ type StatusMessage struct {
 	Message string
 }
 
+type LoginMessage struct {
+	Message  string
+	Username string
+}
+
 /*
 Auth messages
 */
@@ -51,6 +56,10 @@ type CloneResponse struct {
 
 type ActivateRequest struct {
 	PackName string
+}
+
+type ActivateResponse struct {
+	Message string
 }
 
 /*

@@ -27,6 +27,7 @@ var runCmd = &cobra.Command{
 			log.Fatal("Could not load default pack name %v during startup!", DEFAULT_PACK)
 		}
 		rc := pack.GetRunConfig(p.Path)
+		_, _ = pi.ActivatePack(p.Name)
 		rc.RunAll()
 
 		api.Start(":8080", pi, rc, viper.GetString("datadir"))
