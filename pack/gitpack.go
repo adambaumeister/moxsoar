@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/src-d/go-git.v4"
 	"os"
+	"path"
 )
 
 type GitPack struct {
@@ -39,4 +40,25 @@ func (gp *GitPack) Clone() error {
 	}
 
 	return nil
+}
+
+func (gp *GitPack) Update(pn string) (*string, error) {
+	repo, err := git.PlainOpen(path.Join(gp.ContentDir, pn))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open repository for udpate.")
+	}
+
+	w, err := repo.Worktree()
+	if err != nil {
+		return nil, fmt.Errorf("Couldn't checkout a worktree.")
+	}
+
+	err = w.Pull(&git.PullOptions{RemoteName: "origin"})
+	if err != nil {
+		return nil, err
+	}
+
+	ref, _ := repo.Head()
+	hs := ref.Hash().String()
+	return &hs, nil
 }

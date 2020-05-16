@@ -62,6 +62,10 @@ type ActivateResponse struct {
 	Message string
 }
 
+type UpdateRequest struct {
+	PackName string
+}
+
 /*
 INtegration messages
 */

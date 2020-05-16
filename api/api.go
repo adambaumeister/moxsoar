@@ -65,6 +65,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string)
 	httpMux.HandleFunc("/refreshauth", refreshAuth)
 	httpMux.HandleFunc("/packs/clone", a.clonePack)
 	httpMux.HandleFunc("/packs/activate", a.setPack)
+	httpMux.HandleFunc("/packs/update", a.updatePack)
 
 	err := s.ListenAndServe()
 	if err != nil {
@@ -395,6 +396,40 @@ func (a *api) clonePack(writer http.ResponseWriter, request *http.Request) {
 		panic("Failed to write response http")
 	}
 
+}
+
+func (a *api) updatePack(writer http.ResponseWriter, request *http.Request) {
+	// Validate the user is authenticated
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+
+	uReq := UpdateRequest{}
+	err := json.NewDecoder(request.Body).Decode(&uReq)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		r := ErrorMessage("Malformed request.")
+		_, _ = writer.Write(r)
+		return
+	}
+
+	hashstr, err := a.PackIndex.Update(uReq.PackName)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		r := ErrorMessage(err.Error())
+		_, _ = writer.Write(r)
+		return
+	}
+
+	r := StatusMessage{
+		Message: *hashstr,
+	}
+	b := MarshalToJson(r)
+	_, err = writer.Write(b)
+	if err != nil {
+		panic("Failed to write response http")
+	}
 }
 
 func (a *api) addUser(writer http.ResponseWriter, request *http.Request) {

@@ -30,6 +30,8 @@ type Pack struct {
 	Version string
 	Path    string
 	Active  bool
+
+	Repo string
 }
 
 func (p *PackIndex) ActivatePack(pn string) (*Pack, error) {
@@ -74,6 +76,23 @@ func (pi *PackIndex) GetOrClone(packName string, repopath string) (*Pack, error)
 	return p, nil
 }
 
+func (pi *PackIndex) Update(packName string) (*string, error) {
+	p, _ := pi.GetPackName(packName)
+	if p == nil {
+		return nil, fmt.Errorf("Invalid pack name.")
+	}
+
+	gp := GitPack{
+		ContentDir: pi.ContentDir,
+	}
+
+	s, err := gp.Update(packName)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
 func (pi *PackIndex) Reindex() {
 	rePacks := []*Pack{}
 	for _, pack := range pi.Packs {
@@ -96,6 +115,7 @@ func (p *PackIndex) Get(packName string, repopath string) error {
 	newPack := Pack{
 		Name: packName,
 		Path: path.Join(p.ContentDir, packName),
+		Repo: repopath,
 	}
 
 	p.Packs = append(p.Packs, &newPack)
