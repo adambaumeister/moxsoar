@@ -37,7 +37,7 @@ func (gp *GitPack) Clone() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Failed to clone %v", gp.RepoPath)
+		return fmt.Errorf("Failed to clone %v (%v)", gp.RepoPath)
 	}
 
 	return nil

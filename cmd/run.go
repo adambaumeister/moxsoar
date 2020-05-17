@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/adambaumeister/moxsoar/api"
 	"github.com/adambaumeister/moxsoar/pack"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
+	"path"
 )
 
 const DEFAULT_PACK = "moxsoar-content"
@@ -24,13 +26,13 @@ var runCmd = &cobra.Command{
 		p, err := pi.GetOrClone(DEFAULT_PACK, DEFAULT_REPO)
 
 		if err != nil {
-			log.Fatal("Could not load default pack name %s during startup (%s)!", DEFAULT_PACK, err)
+			log.Fatal(fmt.Sprintf("Could not load default pack name %s during startup (%)!", DEFAULT_PACK, err))
 		}
 		rc := pack.GetRunConfig(p.Path)
 		_, _ = pi.ActivatePack(p.Name)
 		rc.RunAll()
 
-		api.Start(":8080", pi, rc, viper.GetString("datadir"))
+		api.Start(":8080", pi, rc, path.Join(viper.GetString("datadir"), "users.json"))
 
 	},
 }
