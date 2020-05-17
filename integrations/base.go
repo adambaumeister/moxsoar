@@ -93,6 +93,13 @@ func (bi *BaseIntegration) Start(integrationName string) {
 
 			// HandleFunc gets defined when the server starts, dispatch runs when a request is received
 			r := bi.Dispatch(request, packDir)
+
+			// If any cookies, write those firsts
+			for _, c := range r.Cookies {
+				http.SetCookie(writer, c)
+			}
+
+			// Write the response data
 			fb, err := ioutil.ReadFile(path.Join(packDir, integrationName, r.ResponseFile))
 			if err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
@@ -170,4 +177,6 @@ type Method struct {
 	MatchRegex   string
 
 	ResponseString string
+
+	Cookies []*http.Cookie
 }

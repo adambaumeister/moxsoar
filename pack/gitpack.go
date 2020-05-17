@@ -30,6 +30,7 @@ func GetPackFromGit(contentdir string, repopath string) (*GitPack, error) {
 
 func (gp *GitPack) Clone() error {
 	fmt.Printf("%v %v", gp.ContentDir, gp.RepoPath)
+
 	_, err := git.PlainClone(gp.ContentDir, false, &git.CloneOptions{
 		URL:      gp.RepoPath,
 		Progress: os.Stdout,

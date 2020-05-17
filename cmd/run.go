@@ -24,7 +24,7 @@ var runCmd = &cobra.Command{
 		p, err := pi.GetOrClone(DEFAULT_PACK, DEFAULT_REPO)
 
 		if err != nil {
-			log.Fatal("Could not load default pack name %v during startup!", DEFAULT_PACK)
+			log.Fatal("Could not load default pack name %s during startup (%s)!", DEFAULT_PACK, err)
 		}
 		rc := pack.GetRunConfig(p.Path)
 		_, _ = pi.ActivatePack(p.Name)

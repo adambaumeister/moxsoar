@@ -66,7 +66,6 @@ func (pi *PackIndex) GetOrClone(packName string, repopath string) (*Pack, error)
 		if err != nil {
 			return nil, err
 		}
-
 	}
 	p, err := pi.GetPackName(packName)
 	if err != nil {
@@ -108,10 +107,22 @@ func (pi *PackIndex) Reindex() {
 
 func (p *PackIndex) Get(packName string, repopath string) error {
 	// Retrieve a pack from the given git url
-	_, err := GetPackFromGit(path.Join(p.ContentDir, packName), repopath)
-	if err != nil {
-		return err
+	// If this pack already exists but has fallen out of the index just update it
+	if _, err := os.Stat(path.Join(p.ContentDir, packName)); !os.IsNotExist(err) {
+		gp := GitPack{
+			ContentDir: p.ContentDir,
+		}
+		_, err := gp.Update(packName)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err := GetPackFromGit(path.Join(p.ContentDir, packName), repopath)
+		if err != nil {
+			return err
+		}
 	}
+
 	newPack := Pack{
 		Name: packName,
 		Path: path.Join(p.ContentDir, packName),
