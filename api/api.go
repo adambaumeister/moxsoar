@@ -58,14 +58,14 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string)
 	httpMux := http.NewServeMux()
 	s := http.Server{Addr: addr, Handler: httpMux}
 
-	httpMux.HandleFunc("/auth", a.auth)
-	httpMux.HandleFunc("/packs", a.getPacks)
-	httpMux.HandleFunc("/packs/", a.getPack)
-	httpMux.HandleFunc("/adduser", a.addUser)
-	httpMux.HandleFunc("/refreshauth", refreshAuth)
-	httpMux.HandleFunc("/packs/clone", a.clonePack)
-	httpMux.HandleFunc("/packs/activate", a.setPack)
-	httpMux.HandleFunc("/packs/update", a.updatePack)
+	httpMux.HandleFunc("/api/auth", a.auth)
+	httpMux.HandleFunc("/api/packs", a.getPacks)
+	httpMux.HandleFunc("/api/packs/", a.getPack)
+	httpMux.HandleFunc("/api/adduser", a.addUser)
+	httpMux.HandleFunc("/api/refreshauth", refreshAuth)
+	httpMux.HandleFunc("/api/packs/clone", a.clonePack)
+	httpMux.HandleFunc("/api/packs/activate", a.setPack)
+	httpMux.HandleFunc("/api/packs/update", a.updatePack)
 
 	err := s.ListenAndServe()
 	if err != nil {
@@ -141,11 +141,13 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 	http.SetCookie(writer, &http.Cookie{
 		Name:    "token",
 		Value:   tokenString,
+		Path:    "/",
 		Expires: expirationTime,
 	})
 
 	http.SetCookie(writer, &http.Cookie{
 		Name:    "username",
+		Path:    "/",
 		Value:   creds.Username,
 		Expires: expirationTime,
 	})
@@ -304,7 +306,7 @@ func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	s := strings.Split(request.URL.Path, "/")
-	if len(s) < 2 {
+	if len(s) < 3 {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -313,17 +315,17 @@ func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
 	rc := a.RunConfig
 	var r interface{}
 	// We've asked for something other than just the pack itself
-	if len(s) == 4 {
-		integrationName := s[3]
+	if len(s) == 5 {
+		integrationName := s[4]
 		r, err = getIntegration(integrationName, rc)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			r = Error{Message: err.Error()}
 			return
 		}
-	} else if len(s) == 5 {
-		integrationName := s[3]
-		packId, _ := strconv.Atoi(s[4])
+	} else if len(s) == 6 {
+		integrationName := s[4]
+		packId, _ := strconv.Atoi(s[5])
 		// need to handle this err
 		i := getIntegrationObject(integrationName, rc)
 		if i == nil {

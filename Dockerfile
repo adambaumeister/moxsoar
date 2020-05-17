@@ -8,6 +8,7 @@ WORKDIR /go/src/github.com/abaumeister/moxsoar/
 RUN go get -v
 RUN go build -o moxsoar .
 
+## Deploy everything into the final container ##
 FROM ubuntu:latest 
 RUN mkdir /etc/moxsoar
 WORKDIR /etc/moxsoar
