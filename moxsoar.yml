@@ -1,2 +1,7 @@
-contentdir: C:\Temp\moxsoar_content
-datadir: C:\Temp\moxsoar_data
+# Content directory stores the Moxsoar content (mock data)
+contentdir: /etc/moxsoar/content
+# The data directory stores stuff specific to the Moxsoar deployment like the user database
+datadir: /etc/moxsoar/data
+# The static directory hosts the NPM-compiled UI files
+staticdir: /etc/moxsoar/static
+

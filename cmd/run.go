@@ -32,7 +32,7 @@ var runCmd = &cobra.Command{
 		_, _ = pi.ActivatePack(p.Name)
 		rc.RunAll()
 
-		api.Start(":8080", pi, rc, path.Join(viper.GetString("datadir"), "users.json"))
+		api.Start(":8080", pi, rc, path.Join(viper.GetString("datadir"), "users.json"), viper.GetString("staticdir"))
 
 	},
 }

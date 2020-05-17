@@ -33,7 +33,7 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
-func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string) {
+func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string, staticdir string) {
 
 	jpdb := JSONPasswordDB{
 		Path: userfile,
@@ -58,6 +58,8 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string)
 	httpMux := http.NewServeMux()
 	s := http.Server{Addr: addr, Handler: httpMux}
 
+	// This
+	httpMux.Handle("/", http.FileServer(http.Dir(staticdir)))
 	httpMux.HandleFunc("/api/auth", a.auth)
 	httpMux.HandleFunc("/api/packs", a.getPacks)
 	httpMux.HandleFunc("/api/packs/", a.getPack)
