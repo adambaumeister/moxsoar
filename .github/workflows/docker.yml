@@ -26,3 +26,4 @@ jobs:
         tag_with_sha: true
         # Sets the target stage to build
         always_pull: true
+        tags: latest  
