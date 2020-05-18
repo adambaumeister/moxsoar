@@ -11,10 +11,9 @@ jobs:
     name: Test the Golang code
     runs-on: ubuntu-latest
     steps:
-      - name: Get deps
-        run: go get
-        
-      - name: Run tests
+      - name: Setup Go environment
+        uses: actions/setup-go@v2.0.3
+      
+      - name: Run go test
         run: go test
-
       
