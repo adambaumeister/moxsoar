@@ -13,7 +13,10 @@ jobs:
     steps:
       - name: Setup Go environment
         uses: actions/setup-go@v2.0.3
-      
+        
+      - name: dir listing
+        run: ls -l 
+        
       - name: Run go test
         run: go test
       
