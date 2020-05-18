@@ -1,3 +1,12 @@
+## Package moxsoar-ui ##
+FROM node:latest as ui-builder
+WORKDIR /tmp
+RUN git clone https://github.com/adambaumeister/moxsoar-ui.git \
+    && cd moxsoar-ui
+WORKDIR /tmp/moxsoar-ui
+RUN npm install \
+    && npm run build
+
 ## First stage: build the moxsoar binary ##
 FROM golang:1.12.6 AS builder
 ADD . /go/src/github.com/abaumeister/moxsoar/ 
@@ -9,10 +18,20 @@ RUN go get -v
 RUN go build -o moxsoar .
 
 ## Deploy everything into the final container ##
-FROM ubuntu:latest 
-RUN mkdir /etc/moxsoar
+FROM ubuntu:latest
+# Add all the required directories  
+RUN mkdir /etc/moxsoar \
+    && mkdir /etc/moxsoar/data \
+    && mkdir /etc/moxsoar/content \
+    && mkdir /etc/moxsoar/static
 WORKDIR /etc/moxsoar
 RUN apt update -y \
  && apt install -y git vim 
-COPY --from=builder /go/src/github.com/abaumeister/moxsoar/ .
+# Copy the Moxsoar binary and base config file
+COPY --from=builder /go/src/github.com/abaumeister/moxsoar/moxsoar .
+COPY --from=builder /go/src/github.com/abaumeister/moxsoar/moxsoar.yml .
+# Copy the UI bundle
+COPY --from=ui-builder /tmp/moxsoar-ui/build/ /etc/moxsoar/static 
+
+
 
