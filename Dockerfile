@@ -33,5 +33,8 @@ COPY --from=builder /go/src/github.com/abaumeister/moxsoar/moxsoar.yml .
 # Copy the UI bundle
 COPY --from=ui-builder /tmp/moxsoar-ui/build/ /etc/moxsoar/static 
 
-
-
+# Start it up
+EXPOSE 8000-8999
+VOLUME /etc/moxsoar/data
+VOLUME /etc/moxsoar/content
+CMD ["./moxsoar", "run", "--config", "./moxsoar.yml"] 
