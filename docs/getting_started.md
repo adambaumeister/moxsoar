@@ -1,6 +1,6 @@
 # Getting started Guide
 ## Content Packs
-Start by running the docker container, [here](../README.md). You should be able to open a browser.
+Start by running the docker container, [here](https://github.com/adambaumeister/moxsoar). You should be able to open a browser.
 
 You'll be greeted by the content pack page.
 
