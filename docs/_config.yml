@@ -3,7 +3,7 @@ description: |
   <img src="img/moxsoar_logo_bg.svg" width="150"><br>
 
   Navigation<br>
-    <a href="getting_started">Overview</a><br>
+    <a href="index">Overview</a><br>
     <a href="getting_started">Getting Started</a><br>
     <a href="authoring">Customization</a><br>
     <a href="pack_vcs">Version Control</a><br>
