@@ -1,14 +1,6 @@
 theme: jekyll-theme-minimal
 description: |
   Navigation
-  <ul>
-  <li>
     <a href="getting_started.md">Getting Started</a>
-  </li>
-  <li>
     <a href="authoring.md">Customization</a>
-  </li>
-  <li>
     <a href="pack_vcs.md">Version Control</a>
-  </li>
-  </ul>
