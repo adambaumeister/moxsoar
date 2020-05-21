@@ -54,6 +54,5 @@ response file (*responseFile*), in this case, a JSON document, as below:
 }
 ```
 
-That's all there is to it! 
-
+That's all there is to it! Proceed to [getting started](getting_started.md).
 
