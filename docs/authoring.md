@@ -1,5 +1,6 @@
 # Customizing MOXSOAR content
 
+## Editing an existing integration
 Moxsoar uses Git and a simple file structure. This means you can quickly make changes "on the fly".
 
 The easiest way to do this is to mount the content directory somewhere you can edit it. Note the volume specification below.
@@ -120,3 +121,53 @@ vi table.json
 ```
 
 You can also create your own routes and associated response data by editing routes.json and creating new response files. Easy!
+
+## Creating a new integration
+The process for creating a new integration is the same as editing an existing one, except you start by copying it
+into a new directory.
+
+Here we copy servicenow into a new integration called "my-custom-integration".
+
+```bash
+adam@docker01:/tmp/mxcontent/moxsoar-content$ cp -r servicenow/ my-custom-integration
+adam@docker01:/tmp/mxcontent/moxsoar-content$ ls -l
+total 20
+drwxr-xr-x 2 root root 4096 May 18 13:29 minemeld
+drwxr-xr-x 2 root root 4096 May 21 04:14 my-custom-integration
+-rw-r--r-- 1 root root  271 May 18 13:29 runner.yml
+drwxr-xr-x 2 root root 4096 May 18 13:29 servicenow
+drwxr-xr-x 2 root root 4096 May 18 13:29 tenable-sc
+```
+
+After creating it, we must update the runner file to tell moxsoar to run this integration. In the below YAML file 
+(**runner.yml**) you can see we add my-custom-integration to the "run" directive.
+
+```bash
+info:
+  description: |
+    The default and central moxsoar content repository!
+  author: |
+    Adam Baumeister
+  version: 0.1
+runner:
+  address: 0.0.0.0
+  portmin: 8000
+  portmax: 8099
+run:
+  - integration: minemeld
+  - integration: servicenow
+  - integration: tenable-sc
+  - integration: my-custom-integration
+```
+
+Runner updates require a restart of moxsoar, which you can do using docker.
+
+```bash
+docker restart moxsoar
+```
+
+You will now see your custom integration in the Moxsoar UI, along with the port associated with it!
+
+<img src="img/after_runner.PNG" width="600">
+
+If you'd like to ingest other, non-default content packs, proceed to [moxsoar and vcs](pack_vcs.md).
