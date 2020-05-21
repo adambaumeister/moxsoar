@@ -1,6 +1,8 @@
 theme: jekyll-theme-minimal
 description: |
+  <img src="img/moxsoar_logo_bg.svg" width="100"><br>
+
   Navigation
-    <a href="getting_started.md">Getting Started</a>
-    <a href="authoring.md">Customization</a>
-    <a href="pack_vcs.md">Version Control</a>
+    <a href="getting_started.md">Getting Started</a><br>
+    <a href="authoring.md">Customization</a><br>
+    <a href="pack_vcs.md">Version Control</a><br>
