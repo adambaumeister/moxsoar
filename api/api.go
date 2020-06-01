@@ -62,7 +62,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string,
 	httpMux.Handle("/", http.FileServer(http.Dir(staticdir)))
 	httpMux.HandleFunc("/api/auth", a.auth)
 	httpMux.HandleFunc("/api/packs", a.getPacks)
-	httpMux.HandleFunc("/api/packs/", a.getPack)
+	httpMux.HandleFunc("/api/packs/", a.PackRequest)
 	httpMux.HandleFunc("/api/adduser", a.addUser)
 	httpMux.HandleFunc("/api/refreshauth", refreshAuth)
 	httpMux.HandleFunc("/api/packs/clone", a.clonePack)
@@ -296,7 +296,7 @@ func (a *api) getPacks(writer http.ResponseWriter, request *http.Request) {
 	_, _ = writer.Write(b)
 }
 
-func (a *api) getPack(writer http.ResponseWriter, request *http.Request) {
+func (a *api) PackOps(writer http.ResponseWriter, request *http.Request) {
 	/*
 		Functions related to pack manipulation
 	*/

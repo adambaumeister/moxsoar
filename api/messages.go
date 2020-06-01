@@ -88,6 +88,10 @@ func ErrorMessage(m string) []byte {
 
 }
 
+type GetRouteRequest struct {
+	routeid int
+}
+
 type GetRoute struct {
 	Route          *integrations.Route
 	ResponseString string
