@@ -1,11 +1,11 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -20,8 +20,9 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 	var integrationName string
 	var unused string
 	var command string
+	var id string
 
-	parseArray := []*string{&unused, &unused, &unused, &packName, &integrationName, &command}
+	parseArray := []*string{&unused, &unused, &unused, &packName, &integrationName, &command, &id}
 	var err error
 
 	err = parsePath(request.URL.Path, parseArray)
@@ -41,16 +42,13 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 			switch request.Method {
 			// GET
 			case http.MethodGet:
-				routeReq := GetRouteRequest{}
-				err := json.NewDecoder(request.Body).Decode(&routeReq)
+				routeId, err := strconv.Atoi(id)
 				if err != nil {
 					writer.WriteHeader(http.StatusBadRequest)
-					r := ErrorMessage("Malformed request.")
+					r := ErrorMessage("No ID for Route specified!")
 					_, _ = writer.Write(r)
 					return
 				}
-
-				routeId := routeReq.routeid
 				i := getIntegrationObject(integrationName, rc)
 
 				if i == nil {
