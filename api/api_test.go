@@ -1,8 +1,68 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"github.com/adambaumeister/moxsoar/pack"
+	"log"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"testing"
 )
+
+const DEFAULT_PACK = "moxsoar-content"
+const DEFAULT_REPO = "https://github.com/adambaumeister/moxsoar-content.git"
+
+func getApiTest() (*api, []*http.Cookie) {
+	/*
+		API Handler fixture
+	*/
+	defaultAdminUser := User{
+		Credentials: Credentials{
+			Username: "admin",
+			Password: "admin",
+		},
+		Name: "Default Administrative User",
+	}
+
+	pi := pack.GetPackIndex(os.Getenv("TEST_CONTENTDIR"))
+	// Pull the default content repository
+	p, err := pi.GetOrClone(DEFAULT_PACK, DEFAULT_REPO)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Could not load default pack name %s during startup (%v)!", DEFAULT_PACK, err))
+	}
+	rc := pack.GetRunConfig(p.Path)
+	_, _ = pi.ActivatePack(p.Name)
+
+	rc.Prepare()
+
+	a := api{
+		PackIndex: pi,
+		Users: map[string]*User{
+			"admin": &defaultAdminUser,
+		},
+		RunConfig: rc,
+	}
+
+	// Auth to the API
+	authReq, err := json.Marshal(defaultAdminUser.Credentials)
+	authReqBytes := bytes.NewBuffer(authReq)
+	req, err := http.NewRequest("POST", "/api/auth", authReqBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(a.auth)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		log.Fatal(fmt.Printf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK))
+	}
+	return &a, rr.Result().Cookies()
+}
 
 func TestSplitStringToPack(t *testing.T) {
 	var packName string
@@ -17,5 +77,27 @@ func TestSplitStringToPack(t *testing.T) {
 
 	if packName != "packname" {
 		t.Fail()
+	}
+}
+
+func TestApi_PackRequest(t *testing.T) {
+	// Get cookies and the API object
+	a, c := getApiTest()
+	req, err := http.NewRequest("GET", "/api/packs/moxsoar-content/minemeld/route/0", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, cookie := range c {
+		req.AddCookie(cookie)
+	}
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(a.PackRequest)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		e := Error{}
+		_ = json.NewDecoder(rr.Body).Decode(&e)
+		t.Errorf("handler returned wrong status code: got %v want %v\nResponse: %v\n",
+			status, http.StatusOK, e.Message)
 	}
 }

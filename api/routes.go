@@ -44,6 +44,7 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 			case http.MethodGet:
 				routeId, err := strconv.Atoi(id)
 				if err != nil {
+
 					writer.WriteHeader(http.StatusBadRequest)
 					r := ErrorMessage("No ID for Route specified!")
 					_, _ = writer.Write(r)
@@ -53,7 +54,8 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 
 				if i == nil {
 					writer.WriteHeader(http.StatusBadRequest)
-					r = Error{Message: "Integration not found"}
+					r := ErrorMessage(fmt.Sprintf("Integration %v not found.", integrationName))
+					_, _ = writer.Write(r)
 					return
 				}
 				for _, m := range i.Routes[routeId].Methods {
