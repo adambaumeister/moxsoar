@@ -97,6 +97,10 @@ type GetRoute struct {
 	ResponseString string
 }
 
+type AddRoute struct {
+	Route *integrations.Route
+}
+
 func MarshalToJson(m interface{}) []byte {
 	b, err := json.Marshal(m)
 	if err != nil {

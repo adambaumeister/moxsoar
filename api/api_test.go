@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/adambaumeister/moxsoar/integrations"
 	"github.com/adambaumeister/moxsoar/pack"
 	"log"
 	"net/http"
@@ -80,13 +81,54 @@ func TestSplitStringToPack(t *testing.T) {
 	}
 }
 
-func TestApi_PackRequest(t *testing.T) {
+func TestApi_GET_PackRequest(t *testing.T) {
 	// Get cookies and the API object
 	a, c := getApiTest()
 	req, err := http.NewRequest("GET", "/api/packs/moxsoar-content/minemeld/route/0", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	for _, cookie := range c {
+		req.AddCookie(cookie)
+	}
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(a.PackRequest)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		e := Error{}
+		_ = json.NewDecoder(rr.Body).Decode(&e)
+		t.Errorf("handler returned wrong status code: got %v want %v\nResponse: %v\n",
+			status, http.StatusOK, e.Message)
+	}
+}
+
+func TestApi_POST_PackRequest(t *testing.T) {
+	// Get cookies and the API object
+	a, c := getApiTest()
+
+	method := integrations.Method{
+		HttpMethod:     "GET",
+		ResponseFile:   "testmethod.json",
+		ResponseCode:   200,
+		ResponseString: "{}",
+	}
+	route := integrations.Route{
+		Path: "/test/path/only",
+		Methods: []*integrations.Method{
+			&method,
+		},
+	}
+	routeMessage := AddRoute{
+		Route: &route,
+	}
+
+	b, err := json.Marshal(routeMessage)
+	req, err := http.NewRequest(http.MethodPost, "/api/packs/moxsoar-content/minemeld/route", bytes.NewBuffer(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	for _, cookie := range c {
 		req.AddCookie(cookie)
 	}

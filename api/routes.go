@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -76,10 +77,17 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 				}
 			// POST
 			case http.MethodPost:
-				writer.WriteHeader(http.StatusNotImplemented)
-				r := ErrorMessage("Not yet implemented.")
-				_, _ = writer.Write(r)
-				return
+				routeMessage := AddRoute{}
+				err := json.NewDecoder(request.Body).Decode(&routeMessage)
+				if err != nil {
+					writer.WriteHeader(http.StatusBadRequest)
+					r := ErrorMessage("Invalid JSON route provided.")
+					_, _ = writer.Write(r)
+					return
+				}
+
+				i := getIntegrationObject(integrationName, rc)
+				i.AddRoute(routeMessage.Route)
 			}
 		}
 		// We've requested the entire integration

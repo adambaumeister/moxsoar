@@ -17,7 +17,7 @@ const ROUTE_FILE = "routes.json"
 
 type BaseIntegration struct {
 	Routes   []*Route
-	Addr     string
+	Addr     string               `json:"none"`
 	ExitChan chan bool            `json:"none"`
 	Tracker  tracker.DebugTracker `json:"none"`
 	PackDir  string               `json:"none"`
@@ -149,7 +149,29 @@ func (bi *BaseIntegration) ReadRoutes(routeFile string) {
 			route.Methods = []*Method{&m}
 		}
 	}
+}
 
+func (bi *BaseIntegration) AddRoute(route *Route) error {
+	// Add a route{} object to both the routes for this integration, and write the string as a file
+	for _, method := range route.Methods {
+		jsonFile := path.Join(bi.PackDir, bi.Name, method.ResponseFile)
+		err := ioutil.WriteFile(jsonFile, []byte(method.ResponseString), 755)
+		if err != nil {
+			return err
+		}
+	}
+
+	routeFile := path.Join(bi.PackDir, bi.Name, ROUTE_FILE)
+	bi.Routes = append(bi.Routes, route)
+	b, err := json.Marshal(bi)
+	if err != nil {
+		log.Printf("Failed to marshal provided route object.\n")
+	}
+	err = ioutil.WriteFile(routeFile, b, 755)
+	if err != nil {
+		log.Printf("Could not write route file\n")
+	}
+	return nil
 }
 
 func (bi *BaseIntegration) Dispatch(request *http.Request, packDir string) *Method {
