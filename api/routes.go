@@ -41,6 +41,7 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 		// Route commands, add, get, etc.
 		case "route":
 			switch request.Method {
+
 			// GET
 			case http.MethodGet:
 				routeId, err := strconv.Atoi(id)
@@ -67,11 +68,8 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 						r = Error{Message: err.Error()}
 						return
 					}
-
 					m.ResponseString = string(fb)
-
 				}
-
 				r = GetRoute{
 					Route: i.Routes[routeId],
 				}
@@ -87,9 +85,20 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 				}
 
 				i := getIntegrationObject(integrationName, rc)
-				i.AddRoute(routeMessage.Route)
+				err = i.AddRoute(routeMessage.Route)
+				if err != nil {
+					writer.WriteHeader(http.StatusBadRequest)
+					r := ErrorMessage(err.Error())
+					_, _ = writer.Write(r)
+					return
+				}
+
+				r = StatusMessage{
+					Message: "Sucessfully added route.",
+				}
 			}
 		}
+
 		// We've requested the entire integration
 	} else if integrationName != "" {
 		r, err = getIntegration(integrationName, rc)

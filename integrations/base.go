@@ -152,6 +152,13 @@ func (bi *BaseIntegration) ReadRoutes(routeFile string) {
 }
 
 func (bi *BaseIntegration) AddRoute(route *Route) error {
+	// First, check that this path doesn't already exist
+	for _, r := range bi.Routes {
+		if route.Path == r.Path {
+			return fmt.Errorf("Path %v already exists.", route.Path)
+		}
+	}
+
 	// Add a route{} object to both the routes for this integration, and write the string as a file
 	for _, method := range route.Methods {
 		jsonFile := path.Join(bi.PackDir, bi.Name, method.ResponseFile)
@@ -165,11 +172,11 @@ func (bi *BaseIntegration) AddRoute(route *Route) error {
 	bi.Routes = append(bi.Routes, route)
 	b, err := json.Marshal(bi)
 	if err != nil {
-		log.Printf("Failed to marshal provided route object.\n")
+		return fmt.Errorf("Failed to marshal provided route object.")
 	}
 	err = ioutil.WriteFile(routeFile, b, 755)
 	if err != nil {
-		log.Printf("Could not write route file\n")
+		return fmt.Errorf("Could not save route file.")
 	}
 	return nil
 }

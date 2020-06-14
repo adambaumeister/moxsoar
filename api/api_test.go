@@ -111,10 +111,10 @@ func TestApi_POST_PackRequest(t *testing.T) {
 		HttpMethod:     "GET",
 		ResponseFile:   "testmethod.json",
 		ResponseCode:   200,
-		ResponseString: "{}",
+		ResponseString: "{\"testing\": \"this\"}",
 	}
 	route := integrations.Route{
-		Path: "/test/path/only",
+		Path: "/test/path/again",
 		Methods: []*integrations.Method{
 			&method,
 		},
@@ -142,4 +142,9 @@ func TestApi_POST_PackRequest(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v\nResponse: %v\n",
 			status, http.StatusOK, e.Message)
 	}
+	sm := StatusMessage{}
+	_ = json.NewDecoder(rr.Body).Decode(&sm)
+
+	fmt.Printf(sm.Message + "\n")
+
 }
