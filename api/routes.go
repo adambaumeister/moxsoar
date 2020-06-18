@@ -75,11 +75,13 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 				}
 			// POST
 			case http.MethodPost:
+
 				routeMessage := AddRoute{}
 				err := json.NewDecoder(request.Body).Decode(&routeMessage)
+
 				if err != nil {
 					writer.WriteHeader(http.StatusBadRequest)
-					r := ErrorMessage("Invalid JSON route provided.")
+					r := ErrorMessage(fmt.Sprintf("Invalid JSON route provided: %v", err))
 					_, _ = writer.Write(r)
 					return
 				}
