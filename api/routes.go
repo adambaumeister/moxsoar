@@ -98,6 +98,26 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 				r = StatusMessage{
 					Message: "Sucessfully added route.",
 				}
+			case http.MethodDelete:
+				routeMessage := DeleteRoute{}
+				err := json.NewDecoder(request.Body).Decode(&routeMessage)
+				if err != nil {
+					writer.WriteHeader(http.StatusBadRequest)
+					r := ErrorMessage(fmt.Sprintf("Invalid JSON delete message provided: %v", err))
+					_, _ = writer.Write(r)
+					return
+				}
+				i := getIntegrationObject(integrationName, rc)
+				err = i.DeleteRoute(routeMessage.Path)
+				if err != nil {
+					writer.WriteHeader(http.StatusBadRequest)
+					r := ErrorMessage(fmt.Sprintf("Delete route failed (%v)", err))
+					_, _ = writer.Write(r)
+					return
+				}
+				r = StatusMessage{
+					Message: fmt.Sprintf("Sucessfully deleted %v", routeMessage.Path),
+				}
 			}
 		}
 

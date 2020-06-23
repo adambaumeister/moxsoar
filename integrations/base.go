@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"regexp"
 	"strings"
@@ -170,6 +171,55 @@ func (bi *BaseIntegration) AddRoute(route *Route) error {
 
 	routeFile := path.Join(bi.PackDir, bi.Name, ROUTE_FILE)
 	bi.Routes = append(bi.Routes, route)
+	b, err := json.Marshal(bi)
+	if err != nil {
+		return fmt.Errorf("Failed to marshal provided route object.")
+	}
+	err = ioutil.WriteFile(routeFile, b, 755)
+	if err != nil {
+		return fmt.Errorf("Could not save route file.")
+	}
+	return nil
+}
+
+func (bi *BaseIntegration) DeleteRoute(pathName string) error {
+	// Replace the route list with the list - the one we are deleting
+	var route *Route
+	var newRoutes []*Route
+	for _, r := range bi.Routes {
+		if pathName == r.Path {
+			route = r
+		} else {
+			newRoutes = append(newRoutes, r)
+		}
+	}
+
+	if route == nil {
+		return (fmt.Errorf("Path not found: %v", pathName))
+	}
+
+	// Find all the response files
+	var files []string
+	for _, method := range route.Methods {
+		files = append(files, path.Join(bi.PackDir, bi.Name, method.ResponseFile))
+	}
+
+	// Delete all the response files
+	for _, f := range files {
+		_, err := os.Stat(f)
+		// Only try unlinking if they exist, duh
+		if !os.IsNotExist(err) {
+			err := os.Remove(f)
+			if err != nil {
+				return err
+			}
+		}
+
+	}
+
+	// write the new integration (route) file
+	bi.Routes = newRoutes
+	routeFile := path.Join(bi.PackDir, bi.Name, ROUTE_FILE)
 	b, err := json.Marshal(bi)
 	if err != nil {
 		return fmt.Errorf("Failed to marshal provided route object.")

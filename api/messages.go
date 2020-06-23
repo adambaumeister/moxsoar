@@ -101,6 +101,10 @@ type AddRoute struct {
 	Route *integrations.Route
 }
 
+type DeleteRoute struct {
+	Path string
+}
+
 func MarshalToJson(m interface{}) []byte {
 	b, err := json.Marshal(m)
 	if err != nil {
