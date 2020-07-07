@@ -115,6 +115,26 @@ func (rc *RunConfig) RunAll() {
 
 }
 
+func (rc *RunConfig) Prepare() {
+	// Prepares all the integrations to be run
+	// This is a special function that is called as part of the test suite to create mock runners
+	for _, run := range rc.Run {
+		exitChan := make(chan bool)
+		switch run.Integration {
+		default:
+			addr := rc.Runner.GetAddress()
+			i := integrations.BaseIntegration{
+				Name:     run.Integration,
+				ExitChan: exitChan,
+				Addr:     addr,
+				PackDir:  rc.Runner.PackDir,
+			}
+			i.ReadRoutes(path.Join(i.PackDir, i.Name, integrations.ROUTE_FILE))
+			rc.Running = append(rc.Running, &i)
+		}
+	}
+}
+
 func (rc *RunConfig) Shutdown() {
 	// Shut down all the running integrations
 	for _, running := range rc.Running {

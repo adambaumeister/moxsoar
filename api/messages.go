@@ -88,9 +88,21 @@ func ErrorMessage(m string) []byte {
 
 }
 
+type GetRouteRequest struct {
+	routeid int
+}
+
 type GetRoute struct {
 	Route          *integrations.Route
 	ResponseString string
+}
+
+type AddRoute struct {
+	Route *integrations.Route
+}
+
+type DeleteRoute struct {
+	Path string
 }
 
 func MarshalToJson(m interface{}) []byte {
