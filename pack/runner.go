@@ -141,4 +141,12 @@ func (rc *RunConfig) Shutdown() {
 		fmt.Printf("Shutting down %v\n", running.Name)
 		running.ExitChan <- true
 	}
+	rc.Running = []*integrations.BaseIntegration{}
+	rc.Runner.currentPort = rc.Runner.PortMin
+}
+
+func (rc *RunConfig) Restart() {
+	// Restart all running integrations
+	rc.Shutdown()
+	rc.RunAll()
 }
