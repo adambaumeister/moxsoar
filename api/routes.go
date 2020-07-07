@@ -95,6 +95,8 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 					return
 				}
 
+				a.RunConfig.Restart()
+
 				r = StatusMessage{
 					Message: "Sucessfully added route.",
 				}

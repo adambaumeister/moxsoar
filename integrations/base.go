@@ -114,7 +114,6 @@ func (bi *BaseIntegration) Start(integrationName string) {
 	// very cool
 	go func() {
 		<-bi.ExitChan
-		fmt.Printf("requested shutdown\n")
 
 		if err := s.Shutdown(context.Background()); err != nil {
 			log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
