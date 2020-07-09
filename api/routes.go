@@ -125,11 +125,16 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 
 		// We've requested the entire integration
 	} else if integrationName != "" {
-		r, err = getIntegration(integrationName, rc)
-		if err != nil {
-			writer.WriteHeader(http.StatusBadRequest)
-			r = Error{Message: err.Error()}
-			return
+		switch request.Method {
+
+		// GET
+		case http.MethodGet:
+			r, err = getIntegration(integrationName, rc)
+			if err != nil {
+				writer.WriteHeader(http.StatusBadRequest)
+				r = Error{Message: err.Error()}
+				return
+			}
 		}
 	} else {
 		r = GetRunnerResponse{
