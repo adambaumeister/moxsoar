@@ -66,6 +66,17 @@ func (r *Runner) GetAddress() string {
 	return a
 }
 
+func (rc *RunConfig) Reread() {
+	b, err := ioutil.ReadFile(path.Join(rc.Runner.PackDir, DEFAULT_RUNNER_CONFIG))
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = yaml.Unmarshal(b, rc)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func GetRunConfig(packDir string) *RunConfig {
 	// Get the runner configuration
 
@@ -194,6 +205,9 @@ func (rc *RunConfig) AddIntegration(name string) error {
 	b, err := json.Marshal(i)
 	err = ioutil.WriteFile(path.Join(rc.Runner.PackDir, name, integrations.ROUTE_FILE), b, 755)
 
+	rc.Run = append(rc.Run, Run{
+		Integration: name,
+	})
 	rc.Restart()
 	return err
 }
