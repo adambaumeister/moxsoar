@@ -154,6 +154,8 @@ func (rc *RunConfig) Shutdown() {
 	for _, running := range rc.Running {
 		fmt.Printf("Shutting down %v\n", running.Name)
 		running.ExitChan <- true
+		// Wait for it to exit
+		<-running.ExitChan
 	}
 	rc.Running = []*integrations.BaseIntegration{}
 	rc.Runner.currentPort = rc.Runner.PortMin
