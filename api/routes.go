@@ -126,14 +126,26 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 		// We've requested the entire integration
 	} else if integrationName != "" {
 		switch request.Method {
-
 		// GET
 		case http.MethodGet:
+
 			r, err = getIntegration(integrationName, rc)
 			if err != nil {
 				writer.WriteHeader(http.StatusBadRequest)
 				r = Error{Message: err.Error()}
 				return
+			}
+		// POST: Add a new integration
+		case http.MethodPost:
+			err = rc.AddIntegration(integrationName)
+			if err != nil {
+				writer.WriteHeader(http.StatusBadRequest)
+				r := ErrorMessage(fmt.Sprintf("Could not add integration: %v", err))
+				_, _ = writer.Write(r)
+				return
+			}
+			r = StatusMessage{
+				Message: fmt.Sprintf("Integration %v added!", integrationName),
 			}
 		}
 	} else {

@@ -1,11 +1,13 @@
 package pack
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/adambaumeister/moxsoar/integrations"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"os"
 	"path"
 )
 
@@ -19,7 +21,7 @@ type RunConfig struct {
 	Runner Runner
 	Run    []Run
 
-	Running []*integrations.BaseIntegration
+	Running []*integrations.BaseIntegration `yaml:"running,omitempty"`
 }
 
 /*
@@ -83,6 +85,18 @@ func GetRunConfig(packDir string) *RunConfig {
 	rc.Runner.currentPort = rc.Runner.PortMin
 
 	return &rc
+}
+
+func (rc *RunConfig) Save() error {
+	b, err := yaml.Marshal(rc)
+	if err != nil {
+		return fmt.Errorf("Could not save the runenr config!")
+	}
+	err = ioutil.WriteFile(path.Join(rc.Runner.PackDir, DEFAULT_RUNNER_CONFIG), b, 755)
+	if err != nil {
+		return fmt.Errorf("Could not save the runenr config!")
+	}
+	return nil
 }
 
 func (rc *RunConfig) RunAll() {
@@ -149,4 +163,35 @@ func (rc *RunConfig) Restart() {
 	// Restart all running integrations
 	rc.Shutdown()
 	rc.RunAll()
+}
+
+func (rc *RunConfig) AddIntegration(name string) error {
+	// Copy the RunConfig, this ensures only marshalable stuff is in there
+	nrc := GetRunConfig(path.Join(rc.Runner.PackDir))
+
+	nrc.Run = append(nrc.Run, Run{
+		Integration: name,
+	})
+	err := nrc.Save()
+	if err != nil {
+		return err
+	}
+
+	// Create the integration directory
+	err = os.Mkdir(path.Join(rc.Runner.PackDir, name), 755)
+	if err != nil {
+		return err
+	}
+
+	// create the default routes file
+	dr := []*integrations.Route{}
+	i := integrations.BaseIntegration{
+		Routes: dr,
+		Name:   name,
+	}
+	b, err := json.Marshal(i)
+	err = ioutil.WriteFile(path.Join(rc.Runner.PackDir, name, integrations.ROUTE_FILE), b, 755)
+
+	rc.Restart()
+	return err
 }
