@@ -147,6 +147,18 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 			r = StatusMessage{
 				Message: fmt.Sprintf("Integration %v added!", integrationName),
 			}
+		case http.MethodDelete:
+			err = rc.DeleteIntegration(integrationName)
+			if err != nil {
+				writer.WriteHeader(http.StatusBadRequest)
+				r := ErrorMessage(fmt.Sprintf("Could not delete integration: %v", err))
+				_, _ = writer.Write(r)
+				return
+			}
+			r = StatusMessage{
+				Message: fmt.Sprintf("Integration %v deleted.", integrationName),
+			}
+
 		}
 	} else {
 		r = GetRunnerResponse{

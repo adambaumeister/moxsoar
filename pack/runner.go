@@ -211,3 +211,47 @@ func (rc *RunConfig) AddIntegration(name string) error {
 	rc.Restart()
 	return err
 }
+
+func (rc *RunConfig) DeleteIntegration(name string) error {
+	intPath := path.Join(rc.Runner.PackDir, name)
+	if _, err := os.Stat(intPath); os.IsNotExist(err) {
+		return fmt.Errorf("Integration directory does not exist: %v", name)
+	}
+
+	directoryList, err := ioutil.ReadDir(intPath)
+	if err != nil {
+		return err
+	}
+
+	for _, f := range directoryList {
+		p := path.Join(intPath, f.Name())
+		err := os.Remove(p)
+		if err != nil {
+			return fmt.Errorf("Failed to delete %v: %v", p, err)
+		}
+	}
+	// Clear the directory
+	err = os.Remove(intPath)
+	if err != nil {
+		return err
+	}
+
+	// Clobber the integration out of the run config
+	nrc := GetRunConfig(path.Join(rc.Runner.PackDir))
+	newRun := []Run{}
+	for _, r := range nrc.Run {
+		if r.Integration != name {
+			newRun = append(newRun, r)
+		}
+	}
+	nrc.Run = newRun
+	err = nrc.Save()
+	if err != nil {
+		return err
+	}
+	// Also update the run register for the actual runconfig
+	rc.Run = newRun
+
+	rc.Restart()
+	return nil
+}
