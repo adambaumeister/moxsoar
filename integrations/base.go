@@ -18,7 +18,7 @@ const ROUTE_FILE = "routes.json"
 
 type BaseIntegration struct {
 	Routes   []*Route
-	Addr     string               `json:"none"`
+	Addr     string
 	ExitChan chan bool            `json:"none"`
 	Tracker  tracker.DebugTracker `json:"none"`
 	PackDir  string               `json:"none"`

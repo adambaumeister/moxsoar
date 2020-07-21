@@ -23,7 +23,8 @@ type api struct {
 
 	Users map[string]*User
 
-	UserDB *JSONPasswordDB
+	UserDB     *JSONPasswordDB
+	SettingsDB *SettingsDB
 }
 
 func enableCors(w *http.ResponseWriter) {
@@ -33,10 +34,15 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
-func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string, staticdir string) {
+func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, staticdir string) {
 
+	userFile := path.Join(datadir, "users.json")
 	jpdb := JSONPasswordDB{
-		Path: userfile,
+		Path: userFile,
+	}
+	settingsFile := path.Join(datadir, "settings.json")
+	sdb := SettingsDB{
+		Path: settingsFile,
 	}
 
 	defaultAdminUser := User{
@@ -52,8 +58,9 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string,
 		Users: map[string]*User{
 			"admin": &defaultAdminUser,
 		},
-		RunConfig: rc,
-		UserDB:    &jpdb,
+		RunConfig:  rc,
+		UserDB:     &jpdb,
+		SettingsDB: &sdb,
 	}
 	httpMux := http.NewServeMux()
 	s := http.Server{Addr: addr, Handler: httpMux}
@@ -68,6 +75,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string,
 	httpMux.HandleFunc("/api/packs/clone", a.clonePack)
 	httpMux.HandleFunc("/api/packs/activate", a.setPack)
 	httpMux.HandleFunc("/api/packs/update", a.updatePack)
+	httpMux.HandleFunc("/api/settings", a.settings)
 
 	err := s.ListenAndServe()
 	if err != nil {
@@ -494,6 +502,7 @@ func getIntegration(name string, rc *pack.RunConfig) (*GetIntegration, error) {
 		if integration.Name == name {
 			r.Routes = integration.Routes
 			r.Integration = name
+			r.Addr = integration.Addr
 			return &r, nil
 		}
 	}

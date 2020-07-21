@@ -6,6 +6,7 @@ import (
 	"github.com/adambaumeister/moxsoar/pack"
 	"github.com/dgrijalva/jwt-go"
 	"log"
+	"net/http"
 )
 
 type Error struct {
@@ -72,6 +73,7 @@ INtegration messages
 
 type GetIntegration struct {
 	Integration string
+	Addr        string
 	Routes      []*integrations.Route
 }
 
@@ -112,4 +114,14 @@ func MarshalToJson(m interface{}) []byte {
 	}
 
 	return b
+}
+
+func SendJsonResponse(m interface{}, writer http.ResponseWriter) error {
+	b, err := json.Marshal(m)
+	if err != nil {
+		log.Fatal(err)
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	_, err = writer.Write(b)
+	return err
 }
