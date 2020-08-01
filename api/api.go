@@ -165,10 +165,10 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 	r := LoginMessage{
 		Message:  "Logged in!",
 		Username: creds.Username,
+		Settings: *a.SettingsDB.GetSettings(),
 	}
 
-	b := MarshalToJson(r)
-	_, _ = writer.Write(b)
+	_ = SendJsonResponse(r, writer)
 
 }
 
@@ -503,6 +503,7 @@ func getIntegration(name string, rc *pack.RunConfig) (*GetIntegration, error) {
 			r.Routes = integration.Routes
 			r.Integration = name
 			r.Addr = integration.Addr
+			r.Port = strings.Split(r.Addr, ":")[1]
 			return &r, nil
 		}
 	}

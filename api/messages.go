@@ -20,6 +20,7 @@ type StatusMessage struct {
 type LoginMessage struct {
 	Message  string
 	Username string
+	Settings Settings
 }
 
 /*
@@ -74,6 +75,7 @@ INtegration messages
 type GetIntegration struct {
 	Integration string
 	Addr        string
+	Port        string
 	Routes      []*integrations.Route
 }
 
