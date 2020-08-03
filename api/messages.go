@@ -127,3 +127,12 @@ func SendJsonResponse(m interface{}, writer http.ResponseWriter) error {
 	_, err = writer.Write(b)
 	return err
 }
+
+func SendError(err error, writer http.ResponseWriter, errcode int) {
+	if err != nil {
+		writer.WriteHeader(errcode)
+		r := ErrorMessage(err.Error())
+		_, _ = writer.Write(r)
+		return
+	}
+}

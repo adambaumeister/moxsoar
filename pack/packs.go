@@ -3,6 +3,7 @@ package pack
 import (
 	"encoding/json"
 	"fmt"
+	"gopkg.in/src-d/go-git.v4"
 	"io/ioutil"
 	"os"
 	"path"
@@ -86,6 +87,23 @@ func (pi *PackIndex) Update(packName string) (*string, error) {
 	}
 
 	s, err := gp.Update(packName)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (pi *PackIndex) Status(packName string) (git.Status, error) {
+	p, _ := pi.GetPackName(packName)
+	if p == nil {
+		return nil, fmt.Errorf("Invalid pack name.")
+	}
+
+	gp := GitPack{
+		ContentDir: pi.ContentDir,
+	}
+
+	s, err := gp.Status(packName)
 	if err != nil {
 		return nil, err
 	}

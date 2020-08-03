@@ -74,6 +74,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, 
 	httpMux.HandleFunc("/api/refreshauth", refreshAuth)
 	httpMux.HandleFunc("/api/packs/clone", a.clonePack)
 	httpMux.HandleFunc("/api/packs/activate", a.setPack)
+	httpMux.HandleFunc("/api/packs/status", a.packStatus)
 	httpMux.HandleFunc("/api/packs/update", a.updatePack)
 	httpMux.HandleFunc("/api/settings", a.settings)
 
@@ -252,6 +253,27 @@ func (a *api) setPack(writer http.ResponseWriter, request *http.Request) {
 	b := MarshalToJson(r)
 	_, _ = writer.Write(b)
 
+}
+
+func (a *api) packStatus(writer http.ResponseWriter, request *http.Request) {
+	// Activate a different pack
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+	var ar ActivateRequest
+
+	err := json.NewDecoder(request.Body).Decode(&ar)
+	if err != nil {
+		SendError(err, writer, http.StatusBadRequest)
+	}
+
+	status, err := a.PackIndex.Status(ar.PackName)
+	if err != nil {
+		SendError(err, writer, http.StatusBadRequest)
+	}
+	b := MarshalToJson(status)
+	_, _ = writer.Write(b)
 }
 
 func refreshAuth(writer http.ResponseWriter, request *http.Request) {

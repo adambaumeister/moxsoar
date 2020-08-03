@@ -63,3 +63,18 @@ func (gp *GitPack) Update(pn string) (*string, error) {
 	hs := ref.Hash().String()
 	return &hs, nil
 }
+
+func (gp *GitPack) Status(pn string) (git.Status, error) {
+	repo, err := git.PlainOpen(path.Join(gp.ContentDir, pn))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open repository for udpate.")
+	}
+
+	w, err := repo.Worktree()
+	if err != nil {
+		return nil, fmt.Errorf("Couldn't checkout a worktree.")
+	}
+
+	s, err := w.Status()
+	return s, err
+}
