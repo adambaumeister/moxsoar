@@ -5,7 +5,9 @@ import (
 	"github.com/adambaumeister/moxsoar/integrations"
 	"github.com/adambaumeister/moxsoar/pack"
 	"github.com/dgrijalva/jwt-go"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"log"
+	"net/http"
 )
 
 type Error struct {
@@ -19,6 +21,7 @@ type StatusMessage struct {
 type LoginMessage struct {
 	Message  string
 	Username string
+	Settings Settings
 }
 
 /*
@@ -66,12 +69,20 @@ type UpdateRequest struct {
 	PackName string
 }
 
+type SaveRequest struct {
+	PackName      string
+	CommitMessage string
+	Author        object.Signature
+}
+
 /*
 INtegration messages
 */
 
 type GetIntegration struct {
 	Integration string
+	Addr        string
+	Port        string
 	Routes      []*integrations.Route
 }
 
@@ -112,4 +123,23 @@ func MarshalToJson(m interface{}) []byte {
 	}
 
 	return b
+}
+
+func SendJsonResponse(m interface{}, writer http.ResponseWriter) error {
+	b, err := json.Marshal(m)
+	if err != nil {
+		log.Fatal(err)
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	_, err = writer.Write(b)
+	return err
+}
+
+func SendError(err error, writer http.ResponseWriter, errcode int) {
+	if err != nil {
+		writer.WriteHeader(errcode)
+		r := ErrorMessage(err.Error())
+		_, _ = writer.Write(r)
+		return
+	}
 }

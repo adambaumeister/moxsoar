@@ -18,7 +18,7 @@ const ROUTE_FILE = "routes.json"
 
 type BaseIntegration struct {
 	Routes   []*Route
-	Addr     string               `json:"none"`
+	Addr     string
 	ExitChan chan bool            `json:"none"`
 	Tracker  tracker.DebugTracker `json:"none"`
 	PackDir  string               `json:"none"`
@@ -118,6 +118,7 @@ func (bi *BaseIntegration) Start(integrationName string) {
 		if err := s.Shutdown(context.Background()); err != nil {
 			log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
 		}
+		bi.ExitChan <- true
 	}()
 
 	if err := s.ListenAndServe(); err != http.ErrServerClosed {
@@ -234,11 +235,6 @@ func (bi *BaseIntegration) Dispatch(request *http.Request, packDir string) *Meth
 	// Used at runtime
 	m := bi.GetRoute(request.URL.Path, request.Method)
 	return m
-}
-
-func sendError(writer http.ResponseWriter, b []byte) {
-	writer.WriteHeader(500)
-	_, _ = writer.Write(b)
 }
 
 type Route struct {

@@ -23,7 +23,8 @@ type api struct {
 
 	Users map[string]*User
 
-	UserDB *JSONPasswordDB
+	UserDB     *JSONPasswordDB
+	SettingsDB *SettingsDB
 }
 
 func enableCors(w *http.ResponseWriter) {
@@ -33,10 +34,15 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
-func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string, staticdir string) {
+func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, staticdir string) {
 
+	userFile := path.Join(datadir, "users.json")
 	jpdb := JSONPasswordDB{
-		Path: userfile,
+		Path: userFile,
+	}
+	settingsFile := path.Join(datadir, "settings.json")
+	sdb := SettingsDB{
+		Path: settingsFile,
 	}
 
 	defaultAdminUser := User{
@@ -52,8 +58,9 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string,
 		Users: map[string]*User{
 			"admin": &defaultAdminUser,
 		},
-		RunConfig: rc,
-		UserDB:    &jpdb,
+		RunConfig:  rc,
+		UserDB:     &jpdb,
+		SettingsDB: &sdb,
 	}
 	httpMux := http.NewServeMux()
 	s := http.Server{Addr: addr, Handler: httpMux}
@@ -67,7 +74,10 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, userfile string,
 	httpMux.HandleFunc("/api/refreshauth", refreshAuth)
 	httpMux.HandleFunc("/api/packs/clone", a.clonePack)
 	httpMux.HandleFunc("/api/packs/activate", a.setPack)
+	httpMux.HandleFunc("/api/packs/status", a.packStatus)
 	httpMux.HandleFunc("/api/packs/update", a.updatePack)
+	httpMux.HandleFunc("/api/packs/save", a.packSave)
+	httpMux.HandleFunc("/api/settings", a.settings)
 
 	err := s.ListenAndServe()
 	if err != nil {
@@ -157,10 +167,10 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 	r := LoginMessage{
 		Message:  "Logged in!",
 		Username: creds.Username,
+		Settings: *a.SettingsDB.GetSettings(),
 	}
 
-	b := MarshalToJson(r)
-	_, _ = writer.Write(b)
+	_ = SendJsonResponse(r, writer)
 
 }
 
@@ -244,6 +254,53 @@ func (a *api) setPack(writer http.ResponseWriter, request *http.Request) {
 	b := MarshalToJson(r)
 	_, _ = writer.Write(b)
 
+}
+
+func (a *api) packStatus(writer http.ResponseWriter, request *http.Request) {
+	// Activate a different pack
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+	var ar ActivateRequest
+
+	err := json.NewDecoder(request.Body).Decode(&ar)
+	if err != nil {
+		SendError(err, writer, http.StatusBadRequest)
+	}
+
+	status, err := a.PackIndex.Status(ar.PackName)
+	if err != nil {
+		SendError(err, writer, http.StatusBadRequest)
+	}
+	b := MarshalToJson(status)
+	_, _ = writer.Write(b)
+}
+
+func (a *api) packSave(writer http.ResponseWriter, request *http.Request) {
+	// Activate a different pack
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+	var cr SaveRequest
+
+	err := json.NewDecoder(request.Body).Decode(&cr)
+	if err != nil {
+		SendError(err, writer, http.StatusBadRequest)
+		return
+	}
+
+	err = a.PackIndex.Save(cr.PackName, cr.CommitMessage, cr.Author)
+	if err != nil {
+		fmt.Printf("Here")
+		SendError(err, writer, http.StatusBadRequest)
+		return
+	}
+	b := MarshalToJson(StatusMessage{
+		Message: "Saved!",
+	})
+	_, _ = writer.Write(b)
 }
 
 func refreshAuth(writer http.ResponseWriter, request *http.Request) {
@@ -494,6 +551,8 @@ func getIntegration(name string, rc *pack.RunConfig) (*GetIntegration, error) {
 		if integration.Name == name {
 			r.Routes = integration.Routes
 			r.Integration = name
+			r.Addr = integration.Addr
+			r.Port = strings.Split(r.Addr, ":")[1]
 			return &r, nil
 		}
 	}

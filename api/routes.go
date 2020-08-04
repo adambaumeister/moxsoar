@@ -125,22 +125,47 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 
 		// We've requested the entire integration
 	} else if integrationName != "" {
-		r, err = getIntegration(integrationName, rc)
-		if err != nil {
-			writer.WriteHeader(http.StatusBadRequest)
-			r = Error{Message: err.Error()}
-			return
+		switch request.Method {
+		// GET
+		case http.MethodGet:
+
+			r, err = getIntegration(integrationName, rc)
+			if err != nil {
+				writer.WriteHeader(http.StatusBadRequest)
+				r = Error{Message: err.Error()}
+				return
+			}
+		// POST: Add a new integration
+		case http.MethodPost:
+			err = rc.AddIntegration(integrationName)
+			if err != nil {
+				writer.WriteHeader(http.StatusBadRequest)
+				r := ErrorMessage(fmt.Sprintf("Could not add integration: %v", err))
+				_, _ = writer.Write(r)
+				return
+			}
+			r = StatusMessage{
+				Message: fmt.Sprintf("Integration %v added!", integrationName),
+			}
+		case http.MethodDelete:
+			err = rc.DeleteIntegration(integrationName)
+			if err != nil {
+				writer.WriteHeader(http.StatusBadRequest)
+				r := ErrorMessage(fmt.Sprintf("Could not delete integration: %v", err))
+				_, _ = writer.Write(r)
+				return
+			}
+			r = StatusMessage{
+				Message: fmt.Sprintf("Integration %v deleted.", integrationName),
+			}
+
 		}
 	} else {
 		r = GetRunnerResponse{
 			RunConfig: rc,
 		}
 	}
-	b := MarshalToJson(r)
-	_, err = writer.Write(b)
-	if err != nil {
-		panic("Failed to write response http")
-	}
+	_ = SendJsonResponse(r, writer)
 }
 
 func parsePath(str string, parseArray []*string) error {
@@ -156,4 +181,42 @@ func parsePath(str string, parseArray []*string) error {
 		idx = idx + 1
 	}
 	return nil
+}
+
+func (a *api) settings(writer http.ResponseWriter, request *http.Request) {
+	// Validate the user is authenticated
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+
+	var r interface{}
+	switch request.Method {
+	case http.MethodGet:
+		r = a.SettingsDB.GetSettings()
+	case http.MethodPost:
+		s := Settings{}
+		err := json.NewDecoder(request.Body).Decode(&s)
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			r := ErrorMessage(fmt.Sprintf("Invalid JSON settings message provided: %v", err))
+			_, _ = writer.Write(r)
+			return
+		}
+
+		fmt.Printf("%v\n", a.SettingsDB.Path)
+		err = a.SettingsDB.Save(s)
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			r := ErrorMessage(fmt.Sprintf("Failed to write settings file: %v", err))
+			_, _ = writer.Write(r)
+			return
+		}
+
+		r = StatusMessage{
+			Message: "Saved the server settings.",
+		}
+	}
+
+	_ = SendJsonResponse(r, writer)
 }

@@ -3,6 +3,7 @@ package pack
 import (
 	"fmt"
 	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"os"
 	"path"
 )
@@ -62,4 +63,44 @@ func (gp *GitPack) Update(pn string) (*string, error) {
 	ref, _ := repo.Head()
 	hs := ref.Hash().String()
 	return &hs, nil
+}
+
+func (gp *GitPack) Status(pn string) (git.Status, error) {
+	repo, err := git.PlainOpen(path.Join(gp.ContentDir, pn))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open repository for udpate.")
+	}
+
+	w, err := repo.Worktree()
+	if err != nil {
+		return nil, fmt.Errorf("Couldn't checkout a worktree.")
+	}
+
+	s, err := w.Status()
+	return s, err
+}
+
+func (gp *GitPack) Save(pn string, commitmsg string, author *object.Signature) error {
+	repo, err := git.PlainOpen(path.Join(gp.ContentDir, pn))
+	if err != nil {
+		return fmt.Errorf("Failed to open repository for udpate.")
+	}
+
+	w, err := repo.Worktree()
+	if err != nil {
+		return fmt.Errorf("Couldn't checkout a worktree.")
+	}
+
+	s, err := w.Status()
+	for fp, _ := range s {
+		_, err := w.Add(fp)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = w.Commit(commitmsg, &git.CommitOptions{
+		Author: author,
+	})
+
+	return err
 }

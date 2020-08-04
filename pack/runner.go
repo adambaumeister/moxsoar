@@ -1,11 +1,13 @@
 package pack
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/adambaumeister/moxsoar/integrations"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"os"
 	"path"
 )
 
@@ -19,7 +21,7 @@ type RunConfig struct {
 	Runner Runner
 	Run    []Run
 
-	Running []*integrations.BaseIntegration
+	Running []*integrations.BaseIntegration `yaml:"running,omitempty"`
 }
 
 /*
@@ -64,6 +66,17 @@ func (r *Runner) GetAddress() string {
 	return a
 }
 
+func (rc *RunConfig) Reread() {
+	b, err := ioutil.ReadFile(path.Join(rc.Runner.PackDir, DEFAULT_RUNNER_CONFIG))
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = yaml.Unmarshal(b, rc)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func GetRunConfig(packDir string) *RunConfig {
 	// Get the runner configuration
 
@@ -83,6 +96,18 @@ func GetRunConfig(packDir string) *RunConfig {
 	rc.Runner.currentPort = rc.Runner.PortMin
 
 	return &rc
+}
+
+func (rc *RunConfig) Save() error {
+	b, err := yaml.Marshal(rc)
+	if err != nil {
+		return fmt.Errorf("Could not save the runenr config!")
+	}
+	err = ioutil.WriteFile(path.Join(rc.Runner.PackDir, DEFAULT_RUNNER_CONFIG), b, 755)
+	if err != nil {
+		return fmt.Errorf("Could not save the runenr config!")
+	}
+	return nil
 }
 
 func (rc *RunConfig) RunAll() {
@@ -140,6 +165,8 @@ func (rc *RunConfig) Shutdown() {
 	for _, running := range rc.Running {
 		fmt.Printf("Shutting down %v\n", running.Name)
 		running.ExitChan <- true
+		// Wait for it to exit
+		<-running.ExitChan
 	}
 	rc.Running = []*integrations.BaseIntegration{}
 	rc.Runner.currentPort = rc.Runner.PortMin
@@ -149,4 +176,82 @@ func (rc *RunConfig) Restart() {
 	// Restart all running integrations
 	rc.Shutdown()
 	rc.RunAll()
+}
+
+func (rc *RunConfig) AddIntegration(name string) error {
+	// Copy the RunConfig, this ensures only marshalable stuff is in there
+	nrc := GetRunConfig(path.Join(rc.Runner.PackDir))
+
+	nrc.Run = append(nrc.Run, Run{
+		Integration: name,
+	})
+	err := nrc.Save()
+	if err != nil {
+		return err
+	}
+
+	// Create the integration directory
+	err = os.Mkdir(path.Join(rc.Runner.PackDir, name), 755)
+	if err != nil {
+		return err
+	}
+
+	// create the default routes file
+	dr := []*integrations.Route{}
+	i := integrations.BaseIntegration{
+		Routes: dr,
+		Name:   name,
+	}
+	b, err := json.Marshal(i)
+	err = ioutil.WriteFile(path.Join(rc.Runner.PackDir, name, integrations.ROUTE_FILE), b, 755)
+
+	rc.Run = append(rc.Run, Run{
+		Integration: name,
+	})
+	rc.Restart()
+	return err
+}
+
+func (rc *RunConfig) DeleteIntegration(name string) error {
+	intPath := path.Join(rc.Runner.PackDir, name)
+	if _, err := os.Stat(intPath); os.IsNotExist(err) {
+		return fmt.Errorf("Integration directory does not exist: %v", name)
+	}
+
+	directoryList, err := ioutil.ReadDir(intPath)
+	if err != nil {
+		return err
+	}
+
+	for _, f := range directoryList {
+		p := path.Join(intPath, f.Name())
+		err := os.Remove(p)
+		if err != nil {
+			return fmt.Errorf("Failed to delete %v: %v", p, err)
+		}
+	}
+	// Clear the directory
+	err = os.Remove(intPath)
+	if err != nil {
+		return err
+	}
+
+	// Clobber the integration out of the run config
+	nrc := GetRunConfig(path.Join(rc.Runner.PackDir))
+	newRun := []Run{}
+	for _, r := range nrc.Run {
+		if r.Integration != name {
+			newRun = append(newRun, r)
+		}
+	}
+	nrc.Run = newRun
+	err = nrc.Save()
+	if err != nil {
+		return err
+	}
+	// Also update the run register for the actual runconfig
+	rc.Run = newRun
+
+	rc.Restart()
+	return nil
 }
