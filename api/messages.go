@@ -5,6 +5,7 @@ import (
 	"github.com/adambaumeister/moxsoar/integrations"
 	"github.com/adambaumeister/moxsoar/pack"
 	"github.com/dgrijalva/jwt-go"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"log"
 	"net/http"
 )
@@ -66,6 +67,12 @@ type ActivateResponse struct {
 
 type UpdateRequest struct {
 	PackName string
+}
+
+type SaveRequest struct {
+	PackName      string
+	CommitMessage string
+	Author        object.Signature
 }
 
 /*

@@ -76,6 +76,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, 
 	httpMux.HandleFunc("/api/packs/activate", a.setPack)
 	httpMux.HandleFunc("/api/packs/status", a.packStatus)
 	httpMux.HandleFunc("/api/packs/update", a.updatePack)
+	httpMux.HandleFunc("/api/packs/save", a.packSave)
 	httpMux.HandleFunc("/api/settings", a.settings)
 
 	err := s.ListenAndServe()
@@ -273,6 +274,32 @@ func (a *api) packStatus(writer http.ResponseWriter, request *http.Request) {
 		SendError(err, writer, http.StatusBadRequest)
 	}
 	b := MarshalToJson(status)
+	_, _ = writer.Write(b)
+}
+
+func (a *api) packSave(writer http.ResponseWriter, request *http.Request) {
+	// Activate a different pack
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+	var cr SaveRequest
+
+	err := json.NewDecoder(request.Body).Decode(&cr)
+	if err != nil {
+		SendError(err, writer, http.StatusBadRequest)
+		return
+	}
+
+	err = a.PackIndex.Save(cr.PackName, cr.CommitMessage, cr.Author)
+	if err != nil {
+		fmt.Printf("Here")
+		SendError(err, writer, http.StatusBadRequest)
+		return
+	}
+	b := MarshalToJson(StatusMessage{
+		Message: "Saved!",
+	})
 	_, _ = writer.Write(b)
 }
 

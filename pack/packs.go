@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"io/ioutil"
 	"os"
 	"path"
@@ -108,6 +109,23 @@ func (pi *PackIndex) Status(packName string) (git.Status, error) {
 		return nil, err
 	}
 	return s, nil
+}
+
+func (pi *PackIndex) Save(packName string, commitmsg string, author object.Signature) error {
+	p, _ := pi.GetPackName(packName)
+	if p == nil {
+		return fmt.Errorf("Invalid pack name.")
+	}
+
+	gp := GitPack{
+		ContentDir: pi.ContentDir,
+	}
+
+	err := gp.Save(packName, commitmsg, &author)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (pi *PackIndex) Reindex() {
