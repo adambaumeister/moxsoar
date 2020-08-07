@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/adambaumeister/moxsoar/integrations"
 	"github.com/adambaumeister/moxsoar/pack"
+	"github.com/adambaumeister/moxsoar/settings"
 	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"log"
@@ -24,7 +25,7 @@ type api struct {
 	Users map[string]*User
 
 	UserDB     *JSONPasswordDB
-	SettingsDB *SettingsDB
+	SettingsDB *settings.SettingsDB
 }
 
 func enableCors(w *http.ResponseWriter) {
@@ -41,7 +42,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, 
 		Path: userFile,
 	}
 	settingsFile := path.Join(datadir, "settings.json")
-	sdb := SettingsDB{
+	sdb := settings.SettingsDB{
 		Path: settingsFile,
 	}
 
@@ -245,7 +246,7 @@ func (a *api) setPack(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	a.RunConfig = pack.GetRunConfig(p.Path)
+	a.RunConfig = pack.GetRunConfig(p.Path, a.SettingsDB.GetSettings())
 	a.RunConfig.RunAll()
 
 	r := ActivateResponse{

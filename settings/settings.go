@@ -1,4 +1,4 @@
-package api
+package settings
 
 import (
 	"encoding/json"
@@ -10,6 +10,7 @@ import (
 
 /*
 Simple settings file, for storing user configured stuff.
+Also stores the elasticsearch server
 */
 
 type SettingsDB struct {
@@ -18,12 +19,14 @@ type SettingsDB struct {
 
 type Settings struct {
 	DisplayHost string
+	Address     string
 }
 
 func (s *SettingsDB) GetSettings() *Settings {
 	// Defaults
 	settings := Settings{
 		DisplayHost: "0.0.0.0",
+		Address:     "http://127.0.0.1:9201",
 	}
 	// If it already exists, read it and return it
 	if fileExists(s.Path) {

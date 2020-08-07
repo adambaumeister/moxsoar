@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/adambaumeister/moxsoar/integrations"
+	"github.com/adambaumeister/moxsoar/settings"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -22,6 +23,8 @@ type RunConfig struct {
 	Run    []Run
 
 	Running []*integrations.BaseIntegration `yaml:"running,omitempty"`
+
+	settings *settings.Settings
 }
 
 /*
@@ -77,7 +80,7 @@ func (rc *RunConfig) Reread() {
 	}
 }
 
-func GetRunConfig(packDir string) *RunConfig {
+func GetRunConfig(packDir string, settings *settings.Settings) *RunConfig {
 	// Get the runner configuration
 
 	b, err := ioutil.ReadFile(path.Join(packDir, DEFAULT_RUNNER_CONFIG))
@@ -85,7 +88,9 @@ func GetRunConfig(packDir string) *RunConfig {
 		log.Fatal(err)
 	}
 
-	rc := RunConfig{}
+	rc := RunConfig{
+		settings: settings,
+	}
 
 	rc.Runner.PackDir = packDir
 	err = yaml.Unmarshal(b, &rc)
@@ -127,17 +132,10 @@ func (rc *RunConfig) RunAll() {
 				Addr:     addr,
 				PackDir:  rc.Runner.PackDir,
 			}
-			go i.Start(run.Integration)
+			go i.Start(run.Integration, rc.settings)
 			rc.Running = append(rc.Running, &i)
 		}
 	}
-
-	// Here is an example of how this can work, we can tell the servers to exit with a channel
-	// Need to change this to be a channel per server
-	// Also need a status check
-	//time.Sleep(5*time.Second)
-	//exitChan <- true
-
 }
 
 func (rc *RunConfig) Prepare() {
@@ -180,7 +178,7 @@ func (rc *RunConfig) Restart() {
 
 func (rc *RunConfig) AddIntegration(name string) error {
 	// Copy the RunConfig, this ensures only marshalable stuff is in there
-	nrc := GetRunConfig(path.Join(rc.Runner.PackDir))
+	nrc := GetRunConfig(path.Join(rc.Runner.PackDir), &settings.Settings{})
 
 	nrc.Run = append(nrc.Run, Run{
 		Integration: name,
@@ -237,7 +235,7 @@ func (rc *RunConfig) DeleteIntegration(name string) error {
 	}
 
 	// Clobber the integration out of the run config
-	nrc := GetRunConfig(path.Join(rc.Runner.PackDir))
+	nrc := GetRunConfig(path.Join(rc.Runner.PackDir), &settings.Settings{})
 	newRun := []Run{}
 	for _, r := range nrc.Run {
 		if r.Integration != name {
