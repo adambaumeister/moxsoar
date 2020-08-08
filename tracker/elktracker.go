@@ -5,11 +5,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"github.com/adambaumeister/moxsoar/settings"
 	"github.com/elastic/go-elasticsearch"
 	"github.com/elastic/go-elasticsearch/esapi"
 	"log"
 	"net/http"
+	"time"
 )
 
 type ElkTracker struct {
@@ -24,18 +26,51 @@ func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 		Addresses: []string{
 			settings.Address,
 		},
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost:   10,
+			ResponseHeaderTimeout: time.Second,
+		},
 	}
 	es, err := elasticsearch.NewClient(cfg)
-	res, err := es.Info()
 	if err != nil {
 		return nil, err
 	}
 
-	et := ElkTracker{
-		Client: es,
+	timeout := make(chan bool, 1)
+	errchan := make(chan error)
+	mchan := make(chan bool)
+	go func() {
+		res, err := es.Info()
+		defer res.Body.Close()
+
+		if err != nil {
+			errchan <- err
+			return
+		}
+		mchan <- true
+	}()
+
+	go func() {
+		time.Sleep(1 * time.Second)
+
+		timeout <- true
+	}()
+
+	select {
+	// If it works
+	case <-mchan:
+		fmt.Printf("Connected!")
+		et := ElkTracker{
+			Client: es,
+		}
+		return &et, nil
+	case e := <-errchan:
+		fmt.Printf("Error connecting to elasticsearch.\n")
+		return nil, e
+	case <-timeout:
+		fmt.Printf("Timeout connecting to elasticsearch!\n")
+		return nil, fmt.Errorf("Failed to connect to ", settings.Address)
 	}
-	defer res.Body.Close()
-	return &et, nil
 }
 
 func (t *ElkTracker) Track(r *http.Request, message *TrackMessage) {

@@ -72,11 +72,6 @@ func (bi *BaseIntegration) GetRoute(url string, method string) *Method {
 	}
 }
 
-func defaultHandler(_ http.ResponseWriter, request *http.Request) {
-	t := tracker.GetDebugTracker()
-	t.Track(request, &tracker.TrackMessage{})
-}
-
 func (bi *BaseIntegration) Start(integrationName string, settings *settings.Settings) {
 	/*
 		Register the HTTP handlers and start the integration
@@ -89,11 +84,9 @@ func (bi *BaseIntegration) Start(integrationName string, settings *settings.Sett
 	s := &http.Server{Addr: addr, Handler: httpMux}
 
 	var t tracker.Tracker
-	t, err := tracker.GetElkTracker(settings)
-	if err != nil {
-		fmt.Printf("Failed to connect to ELK server %v", err)
-		t = tracker.GetDebugTracker()
-	}
+
+	// Grab teh requests tracker
+	t = tracker.GetTracker(settings)
 
 	for _, route := range bi.Routes {
 		httpMux.HandleFunc(route.Path, func(writer http.ResponseWriter, request *http.Request) {

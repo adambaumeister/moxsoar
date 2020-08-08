@@ -6,6 +6,7 @@ import (
 	"github.com/adambaumeister/moxsoar/integrations"
 	"github.com/adambaumeister/moxsoar/pack"
 	"github.com/adambaumeister/moxsoar/settings"
+	"github.com/adambaumeister/moxsoar/tracker"
 	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"log"
@@ -79,6 +80,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, 
 	httpMux.HandleFunc("/api/packs/update", a.updatePack)
 	httpMux.HandleFunc("/api/packs/save", a.packSave)
 	httpMux.HandleFunc("/api/settings", a.settings)
+	httpMux.HandleFunc("/api/settings/test", a.TestTrackerSettings)
 
 	err := s.ListenAndServe()
 	if err != nil {
@@ -172,6 +174,33 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	_ = SendJsonResponse(r, writer)
+
+}
+
+func (a *api) TestTrackerSettings(writer http.ResponseWriter, request *http.Request) {
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+
+	s := a.SettingsDB.GetSettings()
+	_, err := tracker.GetElkTracker(s)
+
+	if err == nil {
+		r := TrackerStatus{
+			Connected: true,
+			Message:   fmt.Sprintf("Connected to the elasticsearch server at %v", s.Address),
+		}
+		_ = SendJsonResponse(r, writer)
+		return
+	}
+
+	r := TrackerStatus{
+		Connected: false,
+		Message:   fmt.Sprintf("Could not connect to Elasticsearch at %v, using default request tracker (stdout).", s.Address),
+	}
+	_ = SendJsonResponse(r, writer)
+	return
 
 }
 

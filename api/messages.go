@@ -77,6 +77,14 @@ type SaveRequest struct {
 }
 
 /*
+Status messages
+*/
+type TrackerStatus struct {
+	Connected bool
+	Message   string
+}
+
+/*
 INtegration messages
 */
 

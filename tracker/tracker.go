@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"github.com/adambaumeister/moxsoar/settings"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -15,6 +16,22 @@ type TrackMessage struct {
 	ResponseCode int
 
 	Request *TrackHTTPRequest
+}
+
+func GetTracker(settings *settings.Settings) Tracker {
+	/*
+		Grab the available tracker. Attempts to connect to Elasticsearch and if that fails,
+		returns the standard debug tracker.
+	*/
+	et, err := GetElkTracker(settings)
+
+	if err == nil {
+		return et
+	}
+
+	dt := GetDebugTracker()
+
+	return dt
 }
 
 // Stripped down http.Request message to be in the right format
