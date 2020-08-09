@@ -15,7 +15,8 @@ import (
 )
 
 type ElkTracker struct {
-	Address   string
+	Address string
+
 	SSLConfig tls.Config
 
 	Client *elasticsearch.Client
@@ -30,6 +31,11 @@ func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 			MaxIdleConnsPerHost:   10,
 			ResponseHeaderTimeout: time.Second,
 		},
+	}
+
+	if settings.Username != "" {
+		cfg.Username = settings.Username
+		cfg.Password = settings.Password
 	}
 	es, err := elasticsearch.NewClient(cfg)
 	if err != nil {
@@ -47,6 +53,11 @@ func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 			errchan <- err
 			return
 		}
+
+		if res.IsError() {
+			errchan <- fmt.Errorf("%v", res.String())
+		}
+
 		mchan <- true
 	}()
 
@@ -59,13 +70,13 @@ func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 	select {
 	// If it works
 	case <-mchan:
-		fmt.Printf("Connected!")
+		fmt.Printf("Elasticsearch Server Connected!\n")
 		et := ElkTracker{
 			Client: es,
 		}
 		return &et, nil
 	case e := <-errchan:
-		fmt.Printf("Error connecting to elasticsearch.\n")
+		fmt.Printf("Error connecting to elasticsearch: %v\n", e)
 		return nil, e
 	case <-timeout:
 		fmt.Printf("Timeout connecting to elasticsearch!\n")

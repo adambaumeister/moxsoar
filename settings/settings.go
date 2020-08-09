@@ -20,6 +20,8 @@ type SettingsDB struct {
 type Settings struct {
 	DisplayHost string
 	Address     string
+	Username    string
+	Password    string
 }
 
 func (s *SettingsDB) GetSettings() *Settings {

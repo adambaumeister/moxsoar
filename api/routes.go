@@ -217,7 +217,7 @@ func (a *api) settings(writer http.ResponseWriter, request *http.Request) {
 		r = StatusMessage{
 			Message: "Saved the server settings.",
 		}
+		a.RunConfig.Restart()
 	}
-
 	_ = SendJsonResponse(r, writer)
 }

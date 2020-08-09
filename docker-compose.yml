@@ -1,0 +1,42 @@
+version: '2.2'
+services:
+  elasticsearch:
+    init: true
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
+    networks:
+      - elastic-stack
+    environment:
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+    ports:
+      - 9200:9200
+
+  kibana:
+    init: true
+    image: docker.elastic.co/kibana/kibana:7.8.1
+    depends_on:
+      - elasticsearch
+    ports: [ '5601:5601' ]
+    networks:
+      - elastic-stack
+    environment:
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=[ your password here ]
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - xpack.security.enabled=true
+
+networks:
+  elastic-stack:
+
+volumes:
+  esdata:
+    driver: local
