@@ -22,6 +22,8 @@ type ElkTracker struct {
 	Client *elasticsearch.Client
 }
 
+const ES_INDEX = "moxsoar_tracker_idx3"
+
 func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 	cfg := elasticsearch.Config{
 		Addresses: []string{
@@ -33,6 +35,16 @@ func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 		},
 	}
 
+	t := map[string]map[string]map[string]string{
+		"properties": {
+			"Timestamp": {
+				"type":   "date",
+				"format": "epoch_second",
+			},
+		},
+	}
+	b, err := json.Marshal(t)
+	mappingb := bytes.NewReader(b)
 	if settings.Username != "" {
 		cfg.Username = settings.Username
 		cfg.Password = settings.Password
@@ -46,9 +58,39 @@ func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 	errchan := make(chan error)
 	mchan := make(chan bool)
 	go func() {
+		// Check if running
 		res, err := es.Info()
 		defer res.Body.Close()
 
+		if err != nil {
+			errchan <- err
+			return
+		}
+		if res.IsError() {
+			errchan <- fmt.Errorf("%v", res.String())
+		}
+		ib := map[string]string{}
+		b, err := json.Marshal(ib)
+		indexb := bytes.NewReader(b)
+		// Create the index if not created
+		ir := esapi.IndexRequest{
+			Index: ES_INDEX,
+			Body:  indexb,
+		}
+		res, err = ir.Do(context.Background(), es)
+		if err != nil {
+			errchan <- err
+			return
+		}
+		if res.IsError() {
+			errchan <- fmt.Errorf("%v", res.String())
+		}
+
+		mr := esapi.IndicesPutMappingRequest{
+			Index: []string{ES_INDEX},
+			Body:  mappingb,
+		}
+		res, err = mr.Do(context.Background(), es)
 		if err != nil {
 			errchan <- err
 			return
@@ -86,17 +128,24 @@ func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 
 func (t *ElkTracker) Track(r *http.Request, message *TrackMessage) {
 	message = BuildTrackMessage(r, message)
+	now := time.Now()
+	sec := now.Unix()
+	message.Timestamp = sec
 
 	b, err := json.Marshal(message)
 	br := bytes.NewReader(b)
+
 	req := esapi.IndexRequest{
-		Index: "moxsoar_tracker_idx",
+		Index: ES_INDEX,
 		Body:  br,
 	}
 
 	res, err := req.Do(context.Background(), t.Client)
 	if err != nil {
 		log.Fatalf("Error getting response from Elasticsearch: %s", err)
+	}
+	if res.IsError() {
+		fmt.Printf("Error adding document: %v", res.String())
 	}
 	defer res.Body.Close()
 }

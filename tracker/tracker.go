@@ -12,8 +12,10 @@ type Tracker interface {
 }
 
 type TrackMessage struct {
-	Path         string
-	ResponseCode int
+	Timestamp       int64
+	TimestampString string
+	Path            string
+	ResponseCode    int
 
 	Request *TrackHTTPRequest
 }
