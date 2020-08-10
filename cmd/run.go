@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/adambaumeister/moxsoar/api"
 	"github.com/adambaumeister/moxsoar/pack"
+	"github.com/adambaumeister/moxsoar/settings"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
@@ -28,7 +29,13 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(fmt.Sprintf("Could not load default pack name %s during startup (%)!", DEFAULT_PACK, err))
 		}
-		rc := pack.GetRunConfig(p.Path)
+
+		settingsFile := path.Join(viper.GetString("datadir"), "settings.json")
+		sdb := settings.SettingsDB{
+			Path: settingsFile,
+		}
+		settings := sdb.GetSettings()
+		rc := pack.GetRunConfig(p.Path, settings)
 		_, _ = pi.ActivatePack(p.Name)
 		rc.RunAll()
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/adambaumeister/moxsoar/settings"
 	"github.com/adambaumeister/moxsoar/tracker"
 	"io/ioutil"
 	"log"
@@ -36,6 +37,7 @@ func (bi *BaseIntegration) GetRoute(url string, method string) *Method {
 			if route.Methods == nil {
 
 				return &Method{
+					path:         route.Path,
 					ResponseFile: route.ResponseFile,
 					ResponseCode: route.ResponseCode,
 					HttpMethod:   method,
@@ -49,9 +51,12 @@ func (bi *BaseIntegration) GetRoute(url string, method string) *Method {
 					if rmethod.MatchRegex != "" {
 						m, _ := regexp.MatchString(rmethod.MatchRegex, url)
 						if m {
+							rmethod.path = route.Path
 							return rmethod
 						}
 					}
+					rmethod.path = route.Path
+
 					return rmethod
 				}
 			}
@@ -60,18 +65,14 @@ func (bi *BaseIntegration) GetRoute(url string, method string) *Method {
 
 	// If nothing matches, return this.
 	return &Method{
+		path:         "default",
 		ResponseFile: "default.json",
 		ResponseCode: 200,
 		HttpMethod:   method,
 	}
 }
 
-func defaultHandler(_ http.ResponseWriter, request *http.Request) {
-	t := tracker.GetDebugTracker()
-	t.Track(request)
-}
-
-func (bi *BaseIntegration) Start(integrationName string) {
+func (bi *BaseIntegration) Start(integrationName string, settings *settings.Settings) {
 	/*
 		Register the HTTP handlers and start the integration
 	*/
@@ -82,18 +83,27 @@ func (bi *BaseIntegration) Start(integrationName string) {
 	httpMux := http.NewServeMux()
 	s := &http.Server{Addr: addr, Handler: httpMux}
 
-	httpMux.HandleFunc("/", defaultHandler)
+	var t tracker.Tracker
+
+	// Grab teh requests tracker
+	t = tracker.GetTracker(settings)
+
 	for _, route := range bi.Routes {
 		httpMux.HandleFunc(route.Path, func(writer http.ResponseWriter, request *http.Request) {
 
-			t := tracker.GetDebugTracker()
-			t.Track(request)
+			//t := tracker.GetDebugTracker()
 
 			// Read the route table within the http handler, such that it is dynamic
 			bi.ReadRoutes(path.Join(packDir, integrationName, ROUTE_FILE))
 
 			// HandleFunc gets defined when the server starts, dispatch runs when a request is received
 			r := bi.Dispatch(request, packDir)
+			tm := tracker.TrackMessage{
+				Path:         r.path,
+				ResponseCode: r.ResponseCode,
+			}
+
+			t.Track(request, &tm)
 
 			// If any cookies, write those firsts
 			for _, c := range r.Cookies {
@@ -253,4 +263,6 @@ type Method struct {
 	ResponseString string
 
 	Cookies []*http.Cookie
+
+	path string
 }

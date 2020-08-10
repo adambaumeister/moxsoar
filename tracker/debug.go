@@ -17,8 +17,11 @@ func GetDebugTracker() *DebugTracker {
 	return &DebugTracker{}
 }
 
-func (t *DebugTracker) Track(request *http.Request) {
-	fmt.Printf("DEBUG: request recevied at path %v\n", request.URL)
+func (t *DebugTracker) Track(request *http.Request, message *TrackMessage) {
+
+	message = BuildTrackMessage(request, message)
+
+	fmt.Printf("DEBUG: request recevied at path %v %v\n", message.Path, message.Request.RemoteAddr)
 	b := []byte{}
 	_, err := request.Body.Read(b)
 	// Unparsable request body

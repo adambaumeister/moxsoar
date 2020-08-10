@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/adambaumeister/moxsoar/integrations"
 	"github.com/adambaumeister/moxsoar/pack"
+	"github.com/adambaumeister/moxsoar/settings"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -34,7 +35,12 @@ func getApiTest() (*api, []*http.Cookie) {
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Could not load default pack name %s during startup (%v)!", DEFAULT_PACK, err))
 	}
-	rc := pack.GetRunConfig(p.Path)
+	settings := settings.Settings{
+		DisplayHost: "0.0.0.0",
+		Address:     "http://127.0.0.1:9201",
+	}
+
+	rc := pack.GetRunConfig(p.Path, &settings)
 	_, _ = pi.ActivatePack(p.Name)
 
 	rc.Prepare()

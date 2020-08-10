@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/adambaumeister/moxsoar/settings"
 	"io/ioutil"
 	"net/http"
 	"path"
@@ -195,7 +196,7 @@ func (a *api) settings(writer http.ResponseWriter, request *http.Request) {
 	case http.MethodGet:
 		r = a.SettingsDB.GetSettings()
 	case http.MethodPost:
-		s := Settings{}
+		s := settings.Settings{}
 		err := json.NewDecoder(request.Body).Decode(&s)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
@@ -216,7 +217,7 @@ func (a *api) settings(writer http.ResponseWriter, request *http.Request) {
 		r = StatusMessage{
 			Message: "Saved the server settings.",
 		}
+		a.RunConfig.Restart()
 	}
-
 	_ = SendJsonResponse(r, writer)
 }

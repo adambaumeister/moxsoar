@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/adambaumeister/moxsoar/integrations"
 	"github.com/adambaumeister/moxsoar/pack"
+	"github.com/adambaumeister/moxsoar/settings"
 	"github.com/dgrijalva/jwt-go"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"log"
@@ -21,7 +22,7 @@ type StatusMessage struct {
 type LoginMessage struct {
 	Message  string
 	Username string
-	Settings Settings
+	Settings settings.Settings
 }
 
 /*
@@ -73,6 +74,14 @@ type SaveRequest struct {
 	PackName      string
 	CommitMessage string
 	Author        object.Signature
+}
+
+/*
+Status messages
+*/
+type TrackerStatus struct {
+	Connected bool
+	Message   string
 }
 
 /*

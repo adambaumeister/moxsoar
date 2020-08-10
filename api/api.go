@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/adambaumeister/moxsoar/integrations"
 	"github.com/adambaumeister/moxsoar/pack"
+	"github.com/adambaumeister/moxsoar/settings"
+	"github.com/adambaumeister/moxsoar/tracker"
 	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"log"
@@ -24,7 +26,7 @@ type api struct {
 	Users map[string]*User
 
 	UserDB     *JSONPasswordDB
-	SettingsDB *SettingsDB
+	SettingsDB *settings.SettingsDB
 }
 
 func enableCors(w *http.ResponseWriter) {
@@ -41,7 +43,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, 
 		Path: userFile,
 	}
 	settingsFile := path.Join(datadir, "settings.json")
-	sdb := SettingsDB{
+	sdb := settings.SettingsDB{
 		Path: settingsFile,
 	}
 
@@ -78,6 +80,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, 
 	httpMux.HandleFunc("/api/packs/update", a.updatePack)
 	httpMux.HandleFunc("/api/packs/save", a.packSave)
 	httpMux.HandleFunc("/api/settings", a.settings)
+	httpMux.HandleFunc("/api/settings/test", a.TestTrackerSettings)
 
 	err := s.ListenAndServe()
 	if err != nil {
@@ -174,6 +177,33 @@ func (a *api) auth(writer http.ResponseWriter, request *http.Request) {
 
 }
 
+func (a *api) TestTrackerSettings(writer http.ResponseWriter, request *http.Request) {
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+
+	s := a.SettingsDB.GetSettings()
+	_, err := tracker.GetElkTracker(s)
+
+	if err == nil {
+		r := TrackerStatus{
+			Connected: true,
+			Message:   fmt.Sprintf("Connected to the elasticsearch server at %v", s.Address),
+		}
+		_ = SendJsonResponse(r, writer)
+		return
+	}
+
+	r := TrackerStatus{
+		Connected: false,
+		Message:   fmt.Sprintf("Could not connect to Elasticsearch at %v, using default request tracker (stdout).", s.Address),
+	}
+	_ = SendJsonResponse(r, writer)
+	return
+
+}
+
 func checkAuth(writer http.ResponseWriter, request *http.Request) (*Claims, *jwt.Token) {
 	/*
 		Validate the auth ticket is still valid
@@ -245,7 +275,7 @@ func (a *api) setPack(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	a.RunConfig = pack.GetRunConfig(p.Path)
+	a.RunConfig = pack.GetRunConfig(p.Path, a.SettingsDB.GetSettings())
 	a.RunConfig.RunAll()
 
 	r := ActivateResponse{
