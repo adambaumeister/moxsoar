@@ -55,7 +55,7 @@ From the Moxsoar UI, you will see a yellow **!** which indicates the Elasticsear
 * Elasticsearch username/password - these are the values you just configured. 
 * Elasticsearch address - By default, the elasticsearch server listens on port **9200**. 
 
-<img src="img/elasticsearch_settings.png" height="400">
+<img src="img/elasticsearch_settings.png" height="600">
 
 The yellow exclamation should be replaced by a green tick, and it's done! Moxsoar will now forward all requests
 to Elasticsearch.
