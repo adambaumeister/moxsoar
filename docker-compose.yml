@@ -30,9 +30,18 @@ services:
       - elastic-stack
     environment:
       - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=[ your password here ]
+      - ELASTICSEARCH_PASSWORD=[ your kibana_system password ]
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - xpack.security.enabled=true
+
+  moxsoar:
+    init: true
+    image: abigserve/moxsoar:latest
+    networks:
+      - elastic-stack
+    ports:
+      -  8000-8100:8000-8100
+
 
 networks:
   elastic-stack:

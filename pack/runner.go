@@ -170,6 +170,10 @@ func (rc *RunConfig) Shutdown() {
 	rc.Runner.currentPort = rc.Runner.PortMin
 }
 
+func (rc *RunConfig) UpdateSettings(s settings.Settings) {
+	rc.settings = &s
+}
+
 func (rc *RunConfig) Restart() {
 	// Restart all running integrations
 	rc.Shutdown()
