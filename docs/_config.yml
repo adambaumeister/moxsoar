@@ -6,4 +6,5 @@ description: |
     <a href="index">Overview</a><br>
     <a href="getting_started">Getting Started</a><br>
     <a href="authoring">Customization</a><br>
+    <a href="elasticsearch">Request Logging/Elasticsearch</a><br>
     <a href="pack_vcs">Version Control</a><br>

@@ -22,7 +22,7 @@ type ElkTracker struct {
 	Client *elasticsearch.Client
 }
 
-const ES_INDEX = "moxsoar_tracker_idx3"
+const ES_INDEX = "moxsoar_tracker_idx"
 
 func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 	cfg := elasticsearch.Config{
@@ -60,7 +60,6 @@ func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 	go func() {
 		// Check if running
 		res, err := es.Info()
-		defer res.Body.Close()
 
 		if err != nil {
 			errchan <- err
