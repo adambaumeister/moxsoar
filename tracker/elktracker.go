@@ -67,6 +67,7 @@ func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 		}
 		if res.IsError() {
 			errchan <- fmt.Errorf("%v", res.String())
+			return
 		}
 		ib := map[string]string{}
 		b, err := json.Marshal(ib)

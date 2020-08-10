@@ -26,9 +26,11 @@ type Settings struct {
 
 func (s *SettingsDB) GetSettings() *Settings {
 	// Defaults
+	// DisplayHost is set to Localhost for dev environments
+	// Address is set to the docker-compose elasticsearch container
 	settings := Settings{
-		DisplayHost: "0.0.0.0",
-		Address:     "http://127.0.0.1:9201",
+		DisplayHost: "localhost",
+		Address:     "http://elasticsearch:9200",
 	}
 	// If it already exists, read it and return it
 	if fileExists(s.Path) {
