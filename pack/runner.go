@@ -200,9 +200,11 @@ func (rc *RunConfig) AddIntegration(name string) error {
 
 	// create the default routes file
 	dr := []*integrations.Route{}
+	addr := rc.Runner.GetAddress()
 	i := integrations.BaseIntegration{
 		Routes: dr,
 		Name:   name,
+		Addr:   addr,
 	}
 	b, err := json.Marshal(i)
 	err = ioutil.WriteFile(path.Join(rc.Runner.PackDir, name, integrations.ROUTE_FILE), b, 755)
