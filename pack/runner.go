@@ -22,7 +22,7 @@ type RunConfig struct {
 	Runner Runner
 	Run    []Run
 
-	Running []*integrations.BaseIntegration `yaml:"running,omitempty"`
+	Running []*integrations.BaseIntegration `yaml:"running"`
 
 	settings *settings.Settings
 }
@@ -88,8 +88,11 @@ func GetRunConfig(packDir string, settings *settings.Settings) *RunConfig {
 		log.Fatal(err)
 	}
 
+	// Setup defaults
 	rc := RunConfig{
 		settings: settings,
+		Run:      []Run{},
+		Running:  []*integrations.BaseIntegration{},
 	}
 
 	rc.Runner.PackDir = packDir
