@@ -162,25 +162,42 @@ func (bi *BaseIntegration) ReadRoutes(routeFile string) {
 	}
 }
 
-func (bi *BaseIntegration) AddRoute(route *Route) error {
-	// First, check that this path doesn't already exist
+func (bi *BaseIntegration) CheckRouteExists(route *Route) *Route {
 	for _, r := range bi.Routes {
 		if route.Path == r.Path {
-			return fmt.Errorf("Path %v already exists.", route.Path)
+			return r
 		}
 	}
+	return nil
+}
 
-	// Add a route{} object to both the routes for this integration, and write the string as a file
-	for _, method := range route.Methods {
-		jsonFile := path.Join(bi.PackDir, bi.Name, method.ResponseFile)
-		err := ioutil.WriteFile(jsonFile, []byte(method.ResponseString), 755)
-		if err != nil {
-			return err
+func (bi *BaseIntegration) AddRoute(route *Route) error {
+
+	if r := bi.CheckRouteExists(route); r != nil {
+		// If the route already exists, simply add the method
+		for _, method := range route.Methods {
+			jsonFile := path.Join(bi.PackDir, bi.Name, method.ResponseFile)
+			err := ioutil.WriteFile(jsonFile, []byte(method.ResponseString), 755)
+			if err != nil {
+				return err
+			}
+			r.Methods = append(r.Methods, method)
 		}
+	} else {
+		// Write the response files
+		for _, method := range route.Methods {
+			jsonFile := path.Join(bi.PackDir, bi.Name, method.ResponseFile)
+			err := ioutil.WriteFile(jsonFile, []byte(method.ResponseString), 755)
+			if err != nil {
+				return err
+			}
+		}
+		// Add the routes to the integration
+		bi.Routes = append(bi.Routes, route)
+
 	}
 
 	routeFile := path.Join(bi.PackDir, bi.Name, ROUTE_FILE)
-	bi.Routes = append(bi.Routes, route)
 	b, err := json.Marshal(bi)
 	if err != nil {
 		return fmt.Errorf("Failed to marshal provided route object.")
