@@ -54,10 +54,12 @@ func (bi *BaseIntegration) GetRoute(url string, method string) *Method {
 							rmethod.path = route.Path
 							return rmethod
 						}
-					}
-					rmethod.path = route.Path
+					} else {
+						rmethod.path = route.Path
 
-					return rmethod
+						return rmethod
+					}
+
 				}
 			}
 		}
@@ -260,7 +262,7 @@ func (bi *BaseIntegration) DeleteRoute(pathName string) error {
 
 func (bi *BaseIntegration) Dispatch(request *http.Request, packDir string) *Method {
 	// Used at runtime
-	m := bi.GetRoute(request.URL.Path, request.Method)
+	m := bi.GetRoute(request.RequestURI, request.Method)
 	return m
 }
 
