@@ -221,3 +221,52 @@ func (a *api) settings(writer http.ResponseWriter, request *http.Request) {
 	}
 	_ = SendJsonResponse(r, writer)
 }
+
+func (a *api) VariablesRequest(writer http.ResponseWriter, request *http.Request) {
+	// Validate the user is authenticated
+	_, tkn := checkAuth(writer, request)
+	if tkn == nil {
+		return
+	}
+
+	var r interface{}
+	switch request.Method {
+	case http.MethodPost:
+		v := AddVariableRequest{}
+		err := json.NewDecoder(request.Body).Decode(&v)
+		if err != nil {
+			SendError(err, writer, http.StatusBadRequest)
+			return
+		}
+
+		err = a.SettingsDB.AddVariable(v.Key, v.Value)
+		if err != nil {
+			SendError(err, writer, http.StatusInternalServerError)
+			return
+		}
+		r = StatusMessage{
+			Message: "Variable added.",
+		}
+		a.RunConfig.UpdateSettings(*a.SettingsDB.GetSettings())
+		a.RunConfig.Restart()
+	case http.MethodDelete:
+		v := DeleteVaribleRequest{}
+		err := json.NewDecoder(request.Body).Decode(&v)
+		if err != nil {
+			SendError(err, writer, http.StatusBadRequest)
+			return
+		}
+		err = a.SettingsDB.DeleteVariable(v.Key)
+		if err != nil {
+			SendError(err, writer, http.StatusInternalServerError)
+			return
+		}
+		r = StatusMessage{
+			Message: "Variable Deleted.",
+		}
+		a.RunConfig.UpdateSettings(*a.SettingsDB.GetSettings())
+		a.RunConfig.Restart()
+	}
+	_ = SendJsonResponse(r, writer)
+
+}

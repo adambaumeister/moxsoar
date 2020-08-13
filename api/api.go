@@ -80,6 +80,7 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, 
 	httpMux.HandleFunc("/api/packs/update", a.updatePack)
 	httpMux.HandleFunc("/api/packs/save", a.packSave)
 	httpMux.HandleFunc("/api/settings", a.settings)
+	httpMux.HandleFunc("/api/settings/variable", a.VariablesRequest)
 	httpMux.HandleFunc("/api/settings/test", a.TestTrackerSettings)
 
 	err := s.ListenAndServe()

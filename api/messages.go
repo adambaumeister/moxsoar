@@ -125,6 +125,15 @@ type DeleteRoute struct {
 	Path string
 }
 
+// requests
+type AddVariableRequest struct {
+	Key   string
+	Value string
+}
+type DeleteVaribleRequest struct {
+	Key string
+}
+
 func MarshalToJson(m interface{}) []byte {
 	b, err := json.Marshal(m)
 	if err != nil {
