@@ -1,6 +1,7 @@
 # Getting started Guide
 ## Content Packs
-Start by running the docker container, [here](https://github.com/adambaumeister/moxsoar). You should be able to open a browser.
+Start by running the docker container, [here](https://github.com/adambaumeister/moxsoar). You can also start it with 
+an instance of Elasticsearch and Kibana for tracking by following the document [here](elasticsearch.md).
 
 You'll be greeted by the content pack page.
 
@@ -55,4 +56,4 @@ For example, to consume the SNOW Mock at :8001 using Ansible you can use the fol
 
 You're now using Moxsoar to test your code!
 
-What if you need something that's not in the default content pack? Proceed to [customizing moxsoar](authoring.md)
+What if you need something that's not in the default content pack? Proceed to [creating content!](user_interface.md)

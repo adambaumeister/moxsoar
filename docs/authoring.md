@@ -1,4 +1,9 @@
-# Customizing MOXSOAR content
+# Advanced Editing
+
+The Moxsoar UI may lag behind in the functionality it provides to editors. In addition, it's often easier to
+author content directly from your favourite IDE as opposed to within the UI.
+
+As long as you follow the content layout, you can edit the content directly on disk. 
 
 ## Editing an existing integration
 Moxsoar uses Git and a simple file structure. This means you can quickly make changes "on the fly".

@@ -79,3 +79,5 @@ which, when matching a request, returns;
     BAR
 </div>
 ```
+
+Now you've built some custom content, you may want to [track requests for it](elasticsearch.md).
