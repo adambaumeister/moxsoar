@@ -114,6 +114,8 @@ func (bi *BaseIntegration) Start(integrationName string, settings *settings.Sett
 
 			// Write the response data
 			fb, err := ioutil.ReadFile(path.Join(packDir, integrationName, r.ResponseFile))
+			// Sub the variables...
+			fb = SubVariables(fb, settings)
 			if err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
 			}
