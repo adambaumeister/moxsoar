@@ -22,6 +22,8 @@ type Settings struct {
 	Address     string
 	Username    string
 	Password    string
+
+	Variables map[string]string
 }
 
 func (s *SettingsDB) GetSettings() *Settings {
@@ -31,6 +33,7 @@ func (s *SettingsDB) GetSettings() *Settings {
 	settings := Settings{
 		DisplayHost: "localhost",
 		Address:     "http://elasticsearch:9200",
+		Variables:   map[string]string{},
 	}
 	// If it already exists, read it and return it
 	if fileExists(s.Path) {
@@ -46,6 +49,20 @@ func (s *SettingsDB) GetSettings() *Settings {
 
 	// Otherwise, just return the default.
 	return &settings
+}
+
+func (s *SettingsDB) AddVariable(k string, v string) error {
+	settings := s.GetSettings()
+	settings.Variables[k] = v
+	err := s.Save(*settings)
+	return err
+}
+
+func (s *SettingsDB) DeleteVariable(k string) error {
+	settings := s.GetSettings()
+	delete(settings.Variables, k)
+	err := s.Save(*settings)
+	return err
 }
 
 func fileExists(filename string) bool {

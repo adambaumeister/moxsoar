@@ -28,37 +28,50 @@ type BaseIntegration struct {
 }
 
 func (bi *BaseIntegration) GetRoute(url string, method string) *Method {
-
 	// Get a route for a given request
+	// This will use a longest-match logic to find the longest path, provided a number of routes, and then
+	// return the matched method within
+	var selectedRoute *Route
+
+	lm := 0
 	for _, route := range bi.Routes {
+		// Find the longest match...
 		if strings.Contains(url, route.Path) {
-
-			// If the route doesn't specify methods, and the path matches, return it
-			if route.Methods == nil {
-
-				return &Method{
-					path:         route.Path,
-					ResponseFile: route.ResponseFile,
-					ResponseCode: route.ResponseCode,
-					HttpMethod:   method,
-				}
+			if len(route.Path) > lm {
+				lm = len(route.Path)
+				selectedRoute = route
 			}
+		}
+	}
+	route := selectedRoute
+	if route != nil {
+		// If the route doesn't specify methods, and the path matches, return it
+		if route.Methods == nil {
 
-			// If the route does specify methods, try to match the method against the provided
-			for _, rmethod := range route.Methods {
-				if method == rmethod.HttpMethod {
-					//  MatchRegex allows more granular (regex) matching for making routing decisions
-					if rmethod.MatchRegex != "" {
-						m, _ := regexp.MatchString(rmethod.MatchRegex, url)
-						if m {
-							rmethod.path = route.Path
-							return rmethod
-						}
+			return &Method{
+				path:         route.Path,
+				ResponseFile: route.ResponseFile,
+				ResponseCode: route.ResponseCode,
+				HttpMethod:   method,
+			}
+		}
+
+		// If the route does specify methods, try to match the method against the provided
+		for _, rmethod := range route.Methods {
+			if method == rmethod.HttpMethod {
+				//  MatchRegex allows more granular (regex) matching for making routing decisions
+				if rmethod.MatchRegex != "" {
+					m, _ := regexp.MatchString(rmethod.MatchRegex, url)
+					if m {
+						rmethod.path = route.Path
+						return rmethod
 					}
+				} else {
 					rmethod.path = route.Path
 
 					return rmethod
 				}
+
 			}
 		}
 	}
@@ -112,6 +125,8 @@ func (bi *BaseIntegration) Start(integrationName string, settings *settings.Sett
 
 			// Write the response data
 			fb, err := ioutil.ReadFile(path.Join(packDir, integrationName, r.ResponseFile))
+			// Sub the variables...
+			fb = SubVariables(fb, settings)
 			if err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
 			}
@@ -162,25 +177,42 @@ func (bi *BaseIntegration) ReadRoutes(routeFile string) {
 	}
 }
 
-func (bi *BaseIntegration) AddRoute(route *Route) error {
-	// First, check that this path doesn't already exist
+func (bi *BaseIntegration) CheckRouteExists(route *Route) *Route {
 	for _, r := range bi.Routes {
 		if route.Path == r.Path {
-			return fmt.Errorf("Path %v already exists.", route.Path)
+			return r
 		}
 	}
+	return nil
+}
 
-	// Add a route{} object to both the routes for this integration, and write the string as a file
-	for _, method := range route.Methods {
-		jsonFile := path.Join(bi.PackDir, bi.Name, method.ResponseFile)
-		err := ioutil.WriteFile(jsonFile, []byte(method.ResponseString), 755)
-		if err != nil {
-			return err
+func (bi *BaseIntegration) AddRoute(route *Route) error {
+
+	if r := bi.CheckRouteExists(route); r != nil {
+		// If the route already exists, simply add the method
+		for _, method := range route.Methods {
+			jsonFile := path.Join(bi.PackDir, bi.Name, method.ResponseFile)
+			err := ioutil.WriteFile(jsonFile, []byte(method.ResponseString), 755)
+			if err != nil {
+				return err
+			}
+			r.Methods = append(r.Methods, method)
 		}
+	} else {
+		// Write the response files
+		for _, method := range route.Methods {
+			jsonFile := path.Join(bi.PackDir, bi.Name, method.ResponseFile)
+			err := ioutil.WriteFile(jsonFile, []byte(method.ResponseString), 755)
+			if err != nil {
+				return err
+			}
+		}
+		// Add the routes to the integration
+		bi.Routes = append(bi.Routes, route)
+
 	}
 
 	routeFile := path.Join(bi.PackDir, bi.Name, ROUTE_FILE)
-	bi.Routes = append(bi.Routes, route)
 	b, err := json.Marshal(bi)
 	if err != nil {
 		return fmt.Errorf("Failed to marshal provided route object.")
@@ -243,7 +275,7 @@ func (bi *BaseIntegration) DeleteRoute(pathName string) error {
 
 func (bi *BaseIntegration) Dispatch(request *http.Request, packDir string) *Method {
 	// Used at runtime
-	m := bi.GetRoute(request.URL.Path, request.Method)
+	m := bi.GetRoute(request.RequestURI, request.Method)
 	return m
 }
 

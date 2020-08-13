@@ -17,7 +17,7 @@ Elasticsearch and Kibana 7.8 quickly for you.
 
 You can run it on any host with docker-compose installed:
 ```bash
-wget -O ./docker-compose.yml https://raw.githubusercontent.com/adambaumeister/moxsoar/request-tracking/docker-compose.yml
+wget -O ./docker-compose.yml https://raw.githubusercontent.com/adambaumeister/moxsoar/master/docker-compose.yml
 docker-compose -f ./docker-compose.yml up 
 ```
 
