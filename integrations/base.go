@@ -28,39 +28,50 @@ type BaseIntegration struct {
 }
 
 func (bi *BaseIntegration) GetRoute(url string, method string) *Method {
-
 	// Get a route for a given request
+	// This will use a longest-match logic to find the longest path, provided a number of routes, and then
+	// return the matched method within
+	var selectedRoute *Route
+
+	lm := 0
 	for _, route := range bi.Routes {
+		// Find the longest match...
 		if strings.Contains(url, route.Path) {
-
-			// If the route doesn't specify methods, and the path matches, return it
-			if route.Methods == nil {
-
-				return &Method{
-					path:         route.Path,
-					ResponseFile: route.ResponseFile,
-					ResponseCode: route.ResponseCode,
-					HttpMethod:   method,
-				}
+			if len(route.Path) > lm {
+				lm = len(route.Path)
+				selectedRoute = route
 			}
+		}
+	}
+	route := selectedRoute
+	if route != nil {
+		// If the route doesn't specify methods, and the path matches, return it
+		if route.Methods == nil {
 
-			// If the route does specify methods, try to match the method against the provided
-			for _, rmethod := range route.Methods {
-				if method == rmethod.HttpMethod {
-					//  MatchRegex allows more granular (regex) matching for making routing decisions
-					if rmethod.MatchRegex != "" {
-						m, _ := regexp.MatchString(rmethod.MatchRegex, url)
-						if m {
-							rmethod.path = route.Path
-							return rmethod
-						}
-					} else {
+			return &Method{
+				path:         route.Path,
+				ResponseFile: route.ResponseFile,
+				ResponseCode: route.ResponseCode,
+				HttpMethod:   method,
+			}
+		}
+
+		// If the route does specify methods, try to match the method against the provided
+		for _, rmethod := range route.Methods {
+			if method == rmethod.HttpMethod {
+				//  MatchRegex allows more granular (regex) matching for making routing decisions
+				if rmethod.MatchRegex != "" {
+					m, _ := regexp.MatchString(rmethod.MatchRegex, url)
+					if m {
 						rmethod.path = route.Path
-
 						return rmethod
 					}
+				} else {
+					rmethod.path = route.Path
 
+					return rmethod
 				}
+
 			}
 		}
 	}
