@@ -196,7 +196,9 @@ func (a *api) settings(writer http.ResponseWriter, request *http.Request) {
 	case http.MethodGet:
 		r = a.SettingsDB.GetSettings()
 	case http.MethodPost:
-		s := settings.Settings{}
+		s := settings.Settings{
+			Variables: map[string]string{},
+		}
 		err := json.NewDecoder(request.Body).Decode(&s)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
