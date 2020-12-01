@@ -11,6 +11,10 @@ import (
 	"net/http"
 )
 
+type MoxsoarMessage interface {
+	Parse() error
+}
+
 type Error struct {
 	Message string
 }
