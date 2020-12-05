@@ -20,9 +20,9 @@ const ROUTE_FILE = "routes.json"
 type BaseIntegration struct {
 	Routes   []*Route
 	Addr     string
-	ExitChan chan bool            `json:"none"`
-	Tracker  tracker.DebugTracker `json:"none"`
-	PackDir  string               `json:"none"`
+	ExitChan chan bool            `json:"-"`
+	Tracker  tracker.DebugTracker `json:"-"`
+	PackDir  string               `json:"-"`
 
 	Name string
 }
@@ -110,7 +110,7 @@ func (bi *BaseIntegration) Start(integrationName string, settings *settings.Sett
 			bi.ReadRoutes(path.Join(packDir, integrationName, ROUTE_FILE))
 
 			// HandleFunc gets defined when the server starts, dispatch runs when a request is received
-			r := bi.Dispatch(request, packDir)
+			r := bi.Dispatch(request)
 			tm := tracker.TrackMessage{
 				Path:         r.path,
 				ResponseCode: r.ResponseCode,
@@ -187,7 +187,6 @@ func (bi *BaseIntegration) CheckRouteExists(route *Route) *Route {
 }
 
 func (bi *BaseIntegration) AddRoute(route *Route) error {
-
 	if r := bi.CheckRouteExists(route); r != nil {
 		// If the route already exists, simply add the method
 		for _, method := range route.Methods {
@@ -273,7 +272,7 @@ func (bi *BaseIntegration) DeleteRoute(pathName string) error {
 	return nil
 }
 
-func (bi *BaseIntegration) Dispatch(request *http.Request, packDir string) *Method {
+func (bi *BaseIntegration) Dispatch(request *http.Request) *Method {
 	// Used at runtime
 	m := bi.GetRoute(request.RequestURI, request.Method)
 	return m

@@ -85,6 +85,11 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 					_, _ = writer.Write(r)
 					return
 				}
+				// Validate the incoming JSON message.
+				err = routeMessage.Parse()
+				if err != nil {
+					SendError(err, writer, 400)
+				}
 
 				i := getIntegrationObject(integrationName, rc)
 				err = i.AddRoute(routeMessage.Route)
