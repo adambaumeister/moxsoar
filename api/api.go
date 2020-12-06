@@ -36,7 +36,13 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
-func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, staticdir string) {
+func Start(addr string,
+	pi *pack.PackIndex,
+	rc *pack.RunConfig,
+	datadir string,
+	staticdir string,
+	SSLCertificatePath string,
+	SSLKeyPath string) {
 
 	userFile := path.Join(datadir, "users.json")
 	jpdb := JSONPasswordDB{
@@ -83,11 +89,17 @@ func Start(addr string, pi *pack.PackIndex, rc *pack.RunConfig, datadir string, 
 	httpMux.HandleFunc("/api/settings/variable", a.VariablesRequest)
 	httpMux.HandleFunc("/api/settings/test", a.TestTrackerSettings)
 
-	err := s.ListenAndServe()
-	if err != nil {
-		log.Fatal(err)
+	if SSLCertificatePath != "" {
+		err := s.ListenAndServeTLS(SSLCertificatePath, SSLKeyPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		err := s.ListenAndServe()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-
 }
 
 func (a *api) auth(writer http.ResponseWriter, request *http.Request) {

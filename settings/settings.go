@@ -18,10 +18,12 @@ type SettingsDB struct {
 }
 
 type Settings struct {
-	DisplayHost string
-	Address     string
-	Username    string
-	Password    string
+	DisplayHost        string
+	Address            string
+	Username           string
+	Password           string
+	SSLCertificatePath string
+	SSLKeyPath         string
 
 	Variables map[string]string
 }
@@ -31,9 +33,11 @@ func (s *SettingsDB) GetSettings() *Settings {
 	// DisplayHost is set to Localhost for dev environments
 	// Address is set to the docker-compose elasticsearch container
 	settings := Settings{
-		DisplayHost: "localhost",
-		Address:     "http://elasticsearch:9200",
-		Variables:   map[string]string{},
+		DisplayHost:        "localhost",
+		Address:            "http://elasticsearch:9200",
+		Variables:          map[string]string{},
+		SSLCertificatePath: "/certs/server.crt",
+		SSLKeyPath:         "/certs/server.key",
 	}
 	// If it already exists, read it and return it
 	if fileExists(s.Path) {
