@@ -122,7 +122,7 @@ func GetElkTracker(settings *settings.Settings) (*ElkTracker, error) {
 		return nil, e
 	case <-timeout:
 		fmt.Printf("Timeout connecting to elasticsearch!\n")
-		return nil, fmt.Errorf("Failed to connect to ", settings.Address)
+		return nil, fmt.Errorf("Failed to connect to %v", settings.Address)
 	}
 }
 

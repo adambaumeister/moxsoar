@@ -89,6 +89,7 @@ func (a *api) PackRequest(writer http.ResponseWriter, request *http.Request) {
 				err = routeMessage.Parse()
 				if err != nil {
 					SendError(err, writer, 400)
+					return
 				}
 
 				i := getIntegrationObject(integrationName, rc)
