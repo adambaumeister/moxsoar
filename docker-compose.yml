@@ -10,6 +10,7 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=${ES_PASSWORD}
     ulimits:
       memlock:
         soft: -1
@@ -29,8 +30,8 @@ services:
     networks:
       - elastic-stack
     environment:
-      - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=[ your kibana_system password ]
+      - ELASTICSEARCH_USERNAME=${ES_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ES_PASSWORD}
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - xpack.security.enabled=true
 
@@ -41,7 +42,10 @@ services:
       - elastic-stack
     ports:
       -  8000-8100:8000-8100
-
+      - 8443
+    volumes:
+      - ${MOXSOAR_SSL_CERT}:/certs/server.crt
+      - ${MOXSOAR_SSL_KEY}:/certs/server.key
 
 networks:
   elastic-stack:

@@ -22,6 +22,7 @@ FROM ubuntu:latest
 RUN mkdir /etc/moxsoar \
     && mkdir /etc/moxsoar/data \
     && mkdir /etc/moxsoar/content \
+    && mkdir /certs \
     && mkdir /etc/moxsoar/static
 WORKDIR /etc/moxsoar
 RUN apt update -y \
@@ -36,4 +37,5 @@ COPY --from=ui-builder /tmp/moxsoar-ui/build/ /etc/moxsoar/static
 EXPOSE 8000-8999
 VOLUME /etc/moxsoar/data
 VOLUME /etc/moxsoar/content
-CMD ["./moxsoar", "run", "--config", "./moxsoar.yml"] 
+VOLUME /certs
+CMD ["./moxsoar", "run", "--config", "./moxsoar.yml"]

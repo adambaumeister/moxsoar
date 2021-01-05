@@ -39,7 +39,12 @@ var runCmd = &cobra.Command{
 		_, _ = pi.ActivatePack(p.Name)
 		rc.RunAll()
 
-		api.Start(":8080", pi, rc, path.Join(viper.GetString("datadir")), viper.GetString("staticdir"))
+		if err := settings.CheckForCerts(); err != nil {
+			log.Print("Certificate for management not found, using plaintext (port 8080) instead.")
+			api.Start(":8080", pi, rc, path.Join(viper.GetString("datadir")), viper.GetString("staticdir"), "", "")
+		} else {
+			api.Start(":8443", pi, rc, path.Join(viper.GetString("datadir")), viper.GetString("staticdir"), settings.SSLCertificatePath, settings.SSLKeyPath)
+		}
 
 	},
 }
